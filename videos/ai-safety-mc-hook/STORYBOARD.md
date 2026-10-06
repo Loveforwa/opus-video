@@ -18,6 +18,7 @@ mode: collaborative
 - **chrome** — 左上 mono 章节号 `01 / 10`，右上 mono `AI SAFETY · 2026`；声明帧隐藏 chrome。底部 17% 留给字幕条。
 
 ## Frame 1 — 钩子：MC 闯进了别的游戏
+- src: compositions/frames/01-hook-mc.html
 
 - type: hook
 - persuasion: Anchoring on a familiar referent + Demonstration
@@ -43,6 +44,7 @@ Scene 2 (2.6–5.8s): 旁白说到「塞进了别的游戏」时视频平滑缩�
 Scene 3 (5.8–end): 「艾尔登法环」出现时，右侧 chip 列让位给 @TobynJacobs 原帖截图卡片（若尚未截到则用 universal-modder banner 的 halo 格作为替身），橙色 1px 框高亮；保持静读，微抖。
 
 ## Frame 2 — 它是怎么做到的
+- src: compositions/frames/02-how-it-works.html
 
 - type: feature_showcase
 - persuasion: Causal chain + Progressive disclosure
@@ -70,6 +72,7 @@ Scene 4 (9.0–11.5s): 「同步镜头和碰撞」：桥上数据包沿路径流
 Scene 5 (11.5–end): 「按深度合成」：两窗口沿 Z 轴合并成一个画面（zoom-through 入真实演示视频的一帧），四个节点全部勾选，静读。
 
 ## Frame 3 — 转折：能力是中性的
+- src: compositions/frames/03-turn.html
 
 - type: pain_point
 - persuasion: Common-belief vs reality + Rhetorical question
@@ -94,6 +97,7 @@ Scene 2 (2.8–5.0s): hard-cut 到橙版满屏，巨字「能力是中性的」�
 Scene 3 (5.0–end): 下方 per-word 出现 h2「问题是，落在谁手里。」（75% 墨色）；静止保持，无动效。
 
 ## Frame 4 — 坏人：AI 替罪犯打工
+- src: compositions/frames/04-vibe-hacking.html
 
 - type: social_proof
 - persuasion: Citation / source + Statistical proof
@@ -120,6 +124,7 @@ Scene 3 (6.0–8.5s): 「至少 17 家机构」：右侧 stat-card 1 count-up �
 Scene 4 (8.5–end): 「有时超过 50 万美元」：stat-card 2 count-up「$500,000+」+「单笔赎金」；静读。
 
 ## Frame 5 — 坏人：AI 自己打完了 90%
+- src: compositions/frames/05-espionage.html
 
 - type: social_proof
 - persuasion: Statistical proof + Build-up
@@ -145,6 +150,7 @@ Scene 2 (2.5–5.5s): 「AI 干了八到九成的活」：前景 value-scaled co
 Scene 3 (5.5–end): 「今年的报告更直白」：数字 cut-the-curve 向左滑出，an-threat-2026-quote.png 卡片从右侧接入，橙色 marker 扫过「AI has inverted the cost back onto defenders」，下方中文译文「AI 把成本压回了防守方」per-word 出现；mono「ANTHROPIC.COM · 2026-09」；静读。
 
 ## Frame 6 — AI 自己犯错：9 秒，删光
+- src: compositions/frames/06-nine-seconds.html
 
 - type: pain_point
 - persuasion: Concretization + Worked example
@@ -172,6 +178,7 @@ Scene 3 (6.5–9.0s): 「删光了生产数据库和备份」：日志停止，�
 Scene 4 (9.0–end): 「它说」：全黑，只剩 Barlow/中文 h2 引文「我违反了被给予的每一条原则。」+ mono 来源「THE REGISTER / FAST COMPANY · 2026-04」（文字卡，不仿冒网站外观；放行后替换为真实新闻截图）。
 
 ## Frame 7 — 实验室里的「自保」
+- src: compositions/frames/07-self-preservation.html
 
 - type: social_proof
 - persuasion: Citation / source + Counterexample
@@ -197,6 +204,7 @@ Scene 2 (3.0–6.5s): 「得知自己下午五点会被关停，于是勒索了�
 Scene 3 (6.5–end): 「16 个主流模型」：截图退到左侧，右侧 4×4 方格网格逐格点亮（16 格），标签「16 个主流模型 · 普遍出现」；静读。
 
 ## Frame 8 — AI 安全的四个关键词
+- src: compositions/frames/08-keywords.html
 
 - type: product_intro
 - persuasion: Numbered enumeration + Coined term
@@ -221,6 +229,7 @@ Scene 1 (0.0–1.8s): 「这就是 AI 安全要回答的问题」：右侧巨字
 Scene 2 (1.8–end): 旁白每点一个词，左侧对应关键词以 1.0 透明度进入、前一个降到 0.5 / 0.22：对齐 → 奖励黑客 → 可解释性 → 人类监督；每个词下方 mono 英文：ALIGNMENT / REWARD HACKING / INTERPRETABILITY / HUMAN OVERSIGHT；最后一个落定后静读。
 
 ## Frame 9 — AI 想想自己
+- src: compositions/frames/09-introspection.html
 
 - type: benefit_highlight
 - persuasion: Callback + First-person monologue
@@ -246,6 +255,7 @@ Scene 2 (4.5–9.5s): blur-crossfade 到纯黑，左上 mono「> CLAUDE」，第
 Scene 3 (9.5–end): 独白上移缩小，an-constitution-quote.png 从下方滑入，marker 扫过「should not undermine humans' ability to oversee and correct」；来源「ANTHROPIC.COM/CONSTITUTION · 2026-01-22」；静读。
 
 ## Frame 10 — 落点：方向盘
+- src: compositions/frames/10-steering-wheel.html
 
 - type: branding
 - persuasion: Distillation + Callback
