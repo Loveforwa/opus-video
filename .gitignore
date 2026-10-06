@@ -4,3 +4,4 @@ node_modules/
 videos/*/renders/
 videos/*/snapshots/
 videos/*/.hyperframes/frame-packets/
+deliverables/
