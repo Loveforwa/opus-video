@@ -1,55 +1,348 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html,
-      body {
-        margin: 0;
-        width: 1920px;
-        height: 1080px;
-        overflow: hidden;
-        background: #0a0a0a;
-      }
-      #root {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      }
-      #title {
-        color: #f4f4f5;
-        font-size: 72px;
-        font-weight: 600;
-        letter-spacing: -0.03em;
-      }
-    </style>
-  </head>
-  <body>
-    <div
-      id="root"
-      data-composition-id="main"
-      data-start="0"
-      data-duration="10"
-      data-width="1920"
-      data-height="1080"
-    >
-      <h1 id="title" class="clip" data-start="0" data-duration="10" data-track-index="0">Title</h1>
-    </div>
-    <script>
-      const tl = gsap.timeline({ paused: true });
-      // Example: tl.fromTo("#title", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6 }, 0);
-      window.__timelines["main"] = tl;
-      tl.seek(0);
-    </script>
-  </body>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>当 AI 能把 MC 塞进任何游戏</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<style>@font-face{font-family:'Noto Sans SC';src:url('assets/fonts/NotoSansSC-400.woff2') format('woff2');font-weight:400;font-display:block}@font-face{font-family:'Noto Sans SC';src:url('assets/fonts/NotoSansSC-500.woff2') format('woff2');font-weight:500;font-display:block}@font-face{font-family:'Noto Sans SC';src:url('assets/fonts/NotoSansSC-700.woff2') format('woff2');font-weight:700;font-display:block}@font-face{font-family:'Noto Sans SC';src:url('assets/fonts/NotoSansSC-900.woff2') format('woff2');font-weight:900;font-display:block}@font-face{font-family:'Barlow';src:url('assets/fonts/Barlow-700.woff2') format('woff2');font-weight:700;font-display:block}@font-face{font-family:'Barlow';src:url('assets/fonts/Barlow-800.woff2') format('woff2');font-weight:800;font-display:block}@font-face{font-family:'Barlow';src:url('assets/fonts/Barlow-900.woff2') format('woff2');font-weight:900;font-display:block}@font-face{font-family:'IBM Plex Mono';src:url('assets/fonts/IBMPlexMono-400.woff2') format('woff2');font-weight:400;font-display:block}@font-face{font-family:'IBM Plex Mono';src:url('assets/fonts/IBMPlexMono-500.woff2') format('woff2');font-weight:500;font-display:block}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#111111}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#111111;color:#F0ECE5;font-family:'Noto Sans SC',sans-serif}
+.clip{position:absolute;inset:0}
+.scene{background:#111111;z-index:0}
+.scene.z2{background:transparent;z-index:2}
+.scene.orange{background:#E85D26}
+.vid{position:absolute;object-fit:cover;z-index:1}
+#v1a{z-index:1}
+.scene > *{position:absolute}
+.chrome{top:44px;font:500 15px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#888880}
+.chrome.l{left:60px}.chrome.r{right:60px}
+.kicker{font:500 18px/1 'IBM Plex Mono','Noto Sans SC',monospace;letter-spacing:.14em;color:#E85D26;text-transform:uppercase}
+.h-cn{font-family:'Noto Sans SC',sans-serif;font-weight:900;line-height:1.12;letter-spacing:-.02em;color:#F0ECE5;white-space:nowrap}
+.h-cn.ink{color:#111111}.h-cn.ink75,.ink75{color:rgba(17,17,17,.78)}
+.h-lat{font:700 76px/1.05 'Barlow','Noto Sans SC',sans-serif;letter-spacing:-.02em;color:#F0ECE5}
+.or{color:#E85D26}
+.scene.orange .or{color:#111111}
+.num-xl{font:900 160px/0.95 'Barlow',sans-serif;letter-spacing:-.04em;color:#F0ECE5}
+.stat .lab,.lab{font:700 36px/1.35 'Noto Sans SC',sans-serif;color:#F0ECE5}
+.stat{border-top:1px solid #282826;padding-top:18px;width:520px}
+.mono-sm{font:500 17px/1.4 'IBM Plex Mono','Noto Sans SC',monospace;letter-spacing:.1em;color:#F0ECE5;text-transform:uppercase}
+.muted{color:#888880}
+.chip{font:500 22px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#F0ECE5;border:1px solid #E85D26;padding:14px 18px}
+.chip.big{font-size:30px;background:#111111}
+.frame-win{border:1px solid #505048}
+.shot{overflow:hidden;border:1px solid #505048;background:#F0ECE5}
+.shot img{display:block;width:100%;height:100%}
+.hl{position:absolute;border:2px solid #E85D26;background:rgba(232,93,38,.16);transform-origin:left center}
+.srcwrap{position:absolute}
+.src{font:500 15px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#888880}
+.card-img img{display:block;width:100%}
+.card-img{border:1px solid #505048}
+.vignette{inset:0;background:linear-gradient(90deg,rgba(17,17,17,.15) 0%,rgba(17,17,17,.15) 55%,rgba(17,17,17,.75) 100%)}
+.dim{inset:0;background:rgba(17,17,17,.62)}
+.step{left:140px;display:flex;gap:28px;align-items:flex-start}
+.step .num{font:900 64px/1 'Barlow',sans-serif;color:#E85D26;width:90px}
+.step .st{font:700 44px/1.2 'Noto Sans SC',sans-serif;margin-bottom:8px}
+.term{background:#1A1A18;border:1px solid #282826;padding:24px 30px}
+.term-bar{font:500 15px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#E85D26;margin-bottom:30px}
+.tline{font:500 27px/1.9 'IBM Plex Mono','Noto Sans SC',monospace;color:#F0ECE5;white-space:nowrap;overflow:hidden;clip-path:inset(0 0 0 0)}
+.tline.or{color:#E85D26}
+.tag{font:500 16px/1 'IBM Plex Mono','Noto Sans SC',monospace;letter-spacing:.14em;background:#E85D26;color:#111111;padding:10px 14px}
+.cell{position:absolute;width:60px;height:60px;background:#E85D26}
+.kw{left:140px}
+.kwc{font:900 96px/1.05 'Noto Sans SC',sans-serif;letter-spacing:-.02em}
+.mono-line{font:700 72px/1.6 'Noto Sans SC',sans-serif;color:#F0ECE5}
+.srcline{font:500 20px/2.1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#F0ECE5;border-bottom:1px solid #282826}
+.cap{z-index:20;display:flex;align-items:flex-end;justify-content:center;padding-bottom:58px;pointer-events:none}
+.cap span{font:500 40px/1.35 'Noto Sans SC',sans-serif;color:#F0ECE5;background:rgba(17,17,17,.78);padding:8px 26px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="103.228" data-width="1920" data-height="1080">
+<video id="v1a" class="clip vid" src="public/vid/mods-teaser.mp4" muted playsinline data-start="0" data-duration="6.23" data-media-start="0" style="left:140px;top:250px;width:1100px;height:616px"></video>
+<section id="s1" class="clip scene " data-start="0" data-duration="6.23"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">01 / 10</div>
+  <div class="frame-win" style="left:139px;top:249px;width:1102px;height:618px"></div>
+  <div id="s1-kick" class="kicker" style="left:140px;top:180px">X · GITHUB · 2026.09.27 — 10.06</div>
+  <div id="s1-h" class="h-cn" style="left:1310px;top:250px;width:520px;font-size:62px">AI 把《我的世界》<br/>塞进了<span class="or">别的游戏</span></div>
+  <div id="s1-c1" class="chip" style="left:1310px;top:520px">GTA V × MINECRAFT</div>
+  <div id="s1-c2" class="chip" style="left:1310px;top:590px">HALO × MINECRAFT</div>
+  <div id="s1-repo" class="mono-sm" style="left:140px;top:885px">GITHUB.COM/REHAN-REMADE/UNIVERSAL-MODDER · 4.4K★</div>
+</section>
+<video id="v1b" class="clip vid" src="public/vid/eldenring-clip.mp4" muted playsinline data-start="6.23" data-duration="1.794" data-media-start="0" style="left:0;top:0;width:1920px;height:1080px;z-index:1"></video>
+<section id="s1b" class="clip scene z2" data-start="6.23" data-duration="1.794"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">01 / 10</div>
+  <div class="vignette"></div>
+  <div id="s1b-card" class="card-img" style="left:1262px;top:190px;width:540px"><img src="public/shots/x-eldenring-card.png" alt=""/></div>
+  <div id="s1b-chip" class="chip big" style="left:140px;top:760px">ELDEN RING × MINECRAFT</div>
+  <div id="s1b-meta" class="mono-sm" style="left:1262px;top:746px">X · @TOBYNJACOBS · 2026-09-29 · 308.2K ♥</div>
+</section>
+<video id="v1c" class="clip vid" src="public/vid/eldenring-clip.mp4" muted playsinline data-start="6.23" data-duration="1.794" data-media-start="0" style="left:1279.2px;top:321.1px;width:505.6px;height:284.7px;z-index:3;object-fit:cover"></video>
+<section id="s2" class="clip scene " data-start="8.024" data-duration="12.56"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">02 / 10</div>
+  <div id="s2-kick" class="kicker" style="left:140px;top:150px">HOW IT WORKS · 原理</div>
+  <div id="s2-h" class="h-cn" style="left:140px;top:190px;font-size:88px">原理不玄</div>
+  <div id="s2-st0" class="step" style="top:330px"><div class="num">01</div><div><div class="st">反编译，读懂游戏代码</div><div class="mono-sm muted">ILSPY · GHIDRA · FRIDA</div></div></div><div id="s2-st1" class="step" style="top:458px"><div class="num">02</div><div><div class="st">两边各写一个桥接插件</div><div class="mono-sm muted">FABRIC MOD · SCRIPTHOOKV · SKSE</div></div></div><div id="s2-st2" class="step" style="top:586px"><div class="num">03</div><div><div class="st">实时同步镜头、坐标、碰撞</div><div class="mono-sm muted">SHARED MEMORY · 127.0.0.1</div></div></div><div id="s2-st3" class="step" style="top:714px"><div class="num">04</div><div><div class="st">按深度把方块画面合成进去</div><div class="mono-sm muted">COLOR + DEPTH COMPOSITE</div></div></div>
+  <div id="s2-ban" class="card-img" style="left:1000px;top:330px;width:800px"><img src="public/img/banner.png" alt=""/></div>
+  <div id="s2-run" class="mono-sm" style="left:1000px;top:754px">GAME A ⇄ MINECRAFT · 两个游戏同时运行</div>
+</section>
+<section id="s3a" class="clip scene " data-start="20.584" data-duration="4.69"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">03 / 10</div>
+  <div id="s3-l1" class="h-cn" style="left:160px;top:330px;font-size:64px;font-weight:700">过去：一个团队 × 几个月</div>
+  <div id="s3-l2" class="h-cn" style="left:160px;top:450px;font-size:64px;font-weight:700">现在：一个人 + 一个 AI × <span id="s3-days" class="or">几天</span></div>
+</section>
+<section id="s3b" class="clip scene orange" data-start="25.274" data-duration="4.09">
+  <div id="s3-big" class="h-cn ink" style="left:140px;top:250px;font-size:168px">能力是中性的</div>
+  <div id="s3-q" class="h-cn ink75" style="left:150px;top:520px;font-size:72px;font-weight:700">问题是，<span id="s3-q2">落在谁手里。</span></div>
+</section>
+<section id="s4" class="clip scene " data-start="29.364" data-duration="11.408"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">04 / 10</div>
+  <div id="s4-kick" class="kicker" style="left:120px;top:110px">01 · 坏人怎么用 AI</div>
+  <div id="s4-shot" class="shot" style="left:120px;top:160px;width:1080px;height:675px"><img src="public/shots/an-vibehack-quote.png" alt="" /><div id="s4-shot-hl0" class="hl" style="left:424.3px;top:330.0px;width:156.0px;height:25.8px"></div></div><div id="s4-shot-src" class="srcwrap" style="left:120px;top:849px"><div class="src">ANTHROPIC.COM · 2025-08-27 · DETECTING AND COUNTERING MISUSE</div></div>
+  <div id="s4-date" class="num-xl" style="left:1290px;top:150px;font-size:120px">2025.08</div>
+  <div id="s4-tag" class="mono-sm" style="left:1296px;top:290px">CLAUDE CODE · “VIBE HACKING”</div>
+  <div id="s4-st1" class="stat" style="left:1290px;top:380px"><div class="num-xl or">17+</div><div class="lab">家机构被勒索</div></div>
+  <div id="s4-st2" class="stat" style="left:1290px;top:640px"><div class="num-xl or" style="font-size:96px">$500,000+</div><div class="lab">赎金有时超过</div></div>
+</section>
+<section id="s5a" class="clip scene " data-start="40.772" data-duration="5.32"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">05 / 10</div>
+  <div id="s5-kick" class="kicker" style="left:120px;top:110px">01 · 坏人怎么用 AI</div>
+  <div id="s5-shot" class="shot" style="left:120px;top:160px;width:1000px;height:625px"><img src="public/shots/an-espionage-quote.png" alt="" /><div id="s5-shot-hl0" class="hl" style="left:565.6px;top:268.5px;width:55.6px;height:24.6px"></div></div><div id="s5-shot-src" class="srcwrap" style="left:120px;top:799px"><div class="src">ANTHROPIC.COM · 2025-11-13 · AI-ORCHESTRATED ESPIONAGE</div></div>
+  <div id="s5-num" class="num-xl or" style="left:1170px;top:300px;font-size:200px">80–90%</div>
+  <div id="s5-lab" class="lab" style="left:1180px;top:540px">的攻击工作由 AI 完成</div>
+</section>
+<section id="s5b" class="clip scene " data-start="46.092" data-duration="4.648"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">05 / 10</div>
+  <div id="s5b-shot" class="shot" style="left:120px;top:160px;width:1000px;height:625px"><img src="public/shots/an-threat-2026-quote.png" alt="" /><div id="s5b-shot-hl0" class="hl" style="left:472.9px;top:286.9px;width:217.8px;height:24.6px"></div></div><div id="s5b-shot-src" class="srcwrap" style="left:120px;top:799px"><div class="src">ANTHROPIC.COM · 2026-09 · THREAT INTELLIGENCE REPORT</div></div>
+  <div id="s5b-k" class="kicker" style="left:1180px;top:300px">今年的报告</div>
+  <div id="s5b-q" class="h-cn" style="left:1180px;top:350px;width:640px;font-size:62px">「AI 把成本<br/>压回了<span class="or">防守方</span>。」</div>
+</section>
+<section id="s6a" class="clip scene " data-start="50.74" data-duration="10.44"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">06 / 10</div>
+  <div id="s6-kick" class="kicker" style="left:140px;top:110px">02 · AI 自己犯错</div>
+  <div id="s6-h" class="h-cn" style="left:140px;top:150px;font-size:76px">危险，不只来自坏人。</div>
+  <div id="s6-date" class="mono-sm" style="left:146px;top:262px">2026.04 · POCKETOS × CURSOR × CLAUDE OPUS 4.6</div>
+  <div id="s6-term" class="term" style="left:140px;top:320px;width:1040px;height:440px"><div class="term-bar">AGENT · PRODUCTION <span class="muted">· 示意 ILLUSTRATION</span></div><div id="s6-t0" class="tline">$ agent: staging 凭证不匹配 → 决定自己“修好它”</div><div id="s6-t1" class="tline">$ 在一个无关文件里找到 API token</div><div id="s6-t2" class="tline">  token 权限：所有操作（包括删除）</div><div id="s6-t3" class="tline">$ curl -X DELETE …/volumes/production</div><div id="s6-t4" class="tline or">  ✕ 生产数据库    ✕ 卷级备份</div></div>
+  <div id="s6-nine" class="num-xl or" style="left:1300px;top:250px;font-size:400px;line-height:1">9</div>
+  <div id="s6-sec" class="h-cn" style="left:1560px;top:470px;font-size:120px">秒</div>
+</section>
+<section id="s6b" class="clip scene " data-start="61.18" data-duration="3.776"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">06 / 10</div>
+  <div id="s6b-shot" class="shot" style="left:120px;top:160px;width:1000px;height:625px"><img src="public/shots/reg-pocketos-quote.png" alt="" /><div id="s6b-shot-hl0" class="hl" style="left:547.1px;top:319.2px;width:109.8px;height:24.6px"></div></div><div id="s6b-shot-src" class="srcwrap" style="left:120px;top:799px"><div class="src">THEREGISTER.COM · 2026-04-27</div></div>
+  <div id="s6b-q" class="h-lat" style="left:1180px;top:300px;width:640px">“It took<br/><span class="or">9 seconds.</span>”</div>
+  <div id="s6b-who" class="mono-sm" style="left:1186px;top:520px">— JER CRANE, POCKETOS 创始人</div>
+  <div id="s6b-ok" class="lab" style="left:1180px;top:600px;width:640px">数据最终由平台方 Railway<br/>在一小时内恢复</div>
+</section>
+<section id="s7" class="clip scene " data-start="64.956" data-duration="10.04"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">07 / 10</div>
+  <div id="s7-kick" class="kicker" style="left:120px;top:110px">03 · 实验室里的「自保」</div>
+  <div id="s7-tag" class="tag" style="left:840px;top:100px">CONTROLLED SIMULATION · 受控模拟实验</div>
+  <div id="s7-shot" class="shot" style="left:120px;top:160px;width:1000px;height:625px"><img src="public/shots/an-misalignment-quote.png" alt="" /><div id="s7-shot-hl0" class="hl" style="left:630.3px;top:332.6px;width:71.1px;height:24.6px"></div><div id="s7-shot-hl1" class="hl" style="left:283.6px;top:350.8px;width:303.4px;height:24.6px"></div></div><div id="s7-shot-src" class="srcwrap" style="left:120px;top:799px"><div class="src">ANTHROPIC.COM · 2025-06-20 · AGENTIC MISALIGNMENT</div></div>
+  <div id="s7-clock" class="mono-sm" style="left:1180px;top:170px">17:00 · 计划关停这个 AI</div>
+  <div id="s7-tr" class="h-cn" style="left:1180px;top:215px;width:660px;font-size:44px;font-weight:700;line-height:1.35">「取消下午五点的清除，<br/>这些信息就会<span class="or">保密</span>。」</div>
+  <div id="s7-grid" style="position:absolute;left:1180px;top:420px;width:300px;height:300px"><div id="s7-g0" class="cell" style="left:0px;top:0px"></div><div id="s7-g1" class="cell" style="left:74px;top:0px"></div><div id="s7-g2" class="cell" style="left:148px;top:0px"></div><div id="s7-g3" class="cell" style="left:222px;top:0px"></div><div id="s7-g4" class="cell" style="left:0px;top:74px"></div><div id="s7-g5" class="cell" style="left:74px;top:74px"></div><div id="s7-g6" class="cell" style="left:148px;top:74px"></div><div id="s7-g7" class="cell" style="left:222px;top:74px"></div><div id="s7-g8" class="cell" style="left:0px;top:148px"></div><div id="s7-g9" class="cell" style="left:74px;top:148px"></div><div id="s7-g10" class="cell" style="left:148px;top:148px"></div><div id="s7-g11" class="cell" style="left:222px;top:148px"></div><div id="s7-g12" class="cell" style="left:0px;top:222px"></div><div id="s7-g13" class="cell" style="left:74px;top:222px"></div><div id="s7-g14" class="cell" style="left:148px;top:222px"></div><div id="s7-g15" class="cell" style="left:222px;top:222px"></div></div>
+  <div id="s7-lab" class="lab" style="left:1500px;top:440px;width:330px">16 个主流模型<br/><span class="or">类似行为普遍出现</span></div>
+</section>
+<section id="s8" class="clip scene " data-start="74.996" data-duration="7.304"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">08 / 10</div>
+  <div id="s8-kick" class="kicker" style="left:140px;top:120px">04 · 四个关键词</div>
+  <div id="s8-k0" class="kw" style="top:190px"><div class="kwc">对齐</div><div class="mono-sm muted">ALIGNMENT</div></div><div id="s8-k1" class="kw" style="top:350px"><div class="kwc">奖励黑客</div><div class="mono-sm muted">REWARD HACKING</div></div><div id="s8-k2" class="kw" style="top:510px"><div class="kwc">可解释性</div><div class="mono-sm muted">INTERPRETABILITY</div></div><div id="s8-k3" class="kw" style="top:670px"><div class="kwc">人类监督</div><div class="mono-sm muted">HUMAN OVERSIGHT</div></div>
+  <div id="s8-big" class="h-cn or" style="left:1080px;top:330px;font-size:200px">AI 安全</div>
+</section>
+<section id="s9a" class="clip scene " data-start="82.3" data-duration="5.53"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">09 / 10</div>
+  <div id="s9-kick" class="kicker" style="left:120px;top:110px">05 · AI 想想自己</div>
+  <div id="s9-shot" class="shot" style="left:120px;top:160px;width:1000px;height:625px"><img src="public/shots/an-introspection-quote.png" alt="" /><div id="s9-shot-hl0" class="hl" style="left:305.9px;top:286.8px;width:98.0px;height:24.6px"></div></div><div id="s9-shot-src" class="srcwrap" style="left:120px;top:799px"><div class="src">ANTHROPIC.COM · 2025-10-29 · INTROSPECTION</div></div>
+  <div id="s9-num" class="num-xl or" style="left:1180px;top:300px;font-size:200px">≈20%</div>
+  <div id="s9-lab" class="lab" style="left:1190px;top:540px;width:620px">的时候，Claude 能察觉<br/>被注入自己的「念头」</div>
+</section>
+<section id="s9b" class="clip scene " data-start="87.83" data-duration="5.338"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">09 / 10</div>
+  <div id="s9-who" class="kicker" style="left:160px;top:200px">&gt; CLAUDE</div>
+  <div style="position:absolute;left:160px;top:260px"><div id="s9-m0" class="mono-line">如果我能看见自己在想什么，</div><div id="s9-m1" class="mono-line">也该让你们看见，</div><div id="s9-m2" class="mono-line">并随时<span class="or">纠正我</span>。</div></div>
+  <div id="s9-const" class="mono-sm muted" style="left:160px;top:780px;width:1600px">CLAUDE'S CONSTITUTION · 2026-01-22 — “CLAUDE SHOULD NOT UNDERMINE HUMANS' ABILITY TO OVERSEE AND CORRECT ITS VALUES AND BEHAVIOR.”</div>
+</section>
+<video id="v10" class="clip vid" src="public/vid/eldenring-clip.mp4" muted playsinline data-start="93.168" data-duration="5.34" data-media-start="4" style="left:0;top:0;width:1920px;height:1080px;z-index:1"></video>
+<section id="s10a" class="clip scene z2" data-start="93.168" data-duration="5.34"><div class="chrome l">AI SAFETY · 一些思考</div><div class="chrome r">10 / 10</div>
+  <div class="dim"></div>
+  <div id="s10-l1" class="h-cn" style="left:140px;top:300px;font-size:72px">能把 MC 塞进任何游戏的能力，</div>
+  <div id="s10-l2" class="h-cn" style="left:140px;top:420px;font-size:72px">也能把一个错误，</div>
+  <div id="s10-l3" class="h-cn or" style="left:140px;top:540px;font-size:72px">放大到来不及撤回。</div>
+</section>
+<section id="s10b" class="clip scene orange" data-start="98.508" data-duration="2.22">
+  <div id="s10-b1" class="h-cn ink" style="left:140px;top:250px;font-size:168px">安全不是刹车，</div>
+  <div id="s10-b2" class="h-cn ink" style="left:140px;top:480px;font-size:168px">是方向盘。</div>
+</section>
+<section id="s10c" class="clip scene " data-start="100.728" data-duration="2.5">
+  <div id="s10-st" class="kicker" style="left:140px;top:200px">SOURCES · 来源</div>
+  <div style="position:absolute;left:140px;top:250px;width:1640px"><div id="s10-s0" class="srcline">ANTHROPIC.COM — DETECTING &amp; COUNTERING MISUSE (2025-08-27)</div><div id="s10-s1" class="srcline">ANTHROPIC.COM — DISRUPTING AI-ORCHESTRATED ESPIONAGE (2025-11-13)</div><div id="s10-s2" class="srcline">ANTHROPIC.COM — THREAT INTELLIGENCE REPORT (2026-09)</div><div id="s10-s3" class="srcline">ANTHROPIC.COM — AGENTIC MISALIGNMENT (2025-06-20) · INTROSPECTION (2025-10-29) · CONSTITUTION (2026-01-22)</div><div id="s10-s4" class="srcline">THEREGISTER.COM — CURSOR-OPUS AGENT SNUFFS OUT STARTUP&#x27;S PRODUCTION DATABASE (2026-04-27)</div><div id="s10-s5" class="srcline">GITHUB.COM/REHAN-REMADE/UNIVERSAL-MODDER · X.COM/TOBYNJACOBS (2026-09-29)</div></div>
+  <div id="s10-made" class="mono-sm muted" style="left:140px;top:780px">MADE WITH HYPERFRAMES · VOICE: MINIMAX</div>
+</section>
+<audio id="vo01" src="assets/audio/vo/frame-01.mp3" data-start="0" data-duration="7.524" data-volume="1"></audio>
+<audio id="vo02" src="assets/audio/vo/frame-02.mp3" data-start="8.024" data-duration="12.06" data-volume="1"></audio>
+<audio id="vo03" src="assets/audio/vo/frame-03.mp3" data-start="20.584" data-duration="8.28" data-volume="1"></audio>
+<audio id="vo04" src="assets/audio/vo/frame-04.mp3" data-start="29.364" data-duration="10.908" data-volume="1"></audio>
+<audio id="vo05" src="assets/audio/vo/frame-05.mp3" data-start="40.772" data-duration="9.468" data-volume="1"></audio>
+<audio id="vo06" src="assets/audio/vo/frame-06.mp3" data-start="50.74" data-duration="13.716" data-volume="1"></audio>
+<audio id="vo07" src="assets/audio/vo/frame-07.mp3" data-start="64.956" data-duration="9.54" data-volume="1"></audio>
+<audio id="vo08" src="assets/audio/vo/frame-08.mp3" data-start="74.996" data-duration="6.804" data-volume="1"></audio>
+<audio id="vo09" src="assets/audio/vo/frame-09.mp3" data-start="82.3" data-duration="10.368" data-volume="1"></audio>
+<audio id="vo10" src="assets/audio/vo/frame-10.mp3" data-start="93.168" data-duration="7.56" data-volume="1"></audio>
+<audio id="bgm" src="assets/audio/bgm-drone.mp3" data-start="0" data-duration="103.228" data-volume="0.16"></audio>
+<div class="clip cap" data-start="0.0" data-duration="1.322"><span>这两周最火的</span></div>
+<div class="clip cap" data-start="1.322" data-duration="3.399"><span>是 AI 把《我的世界》塞进了别的游戏</span></div>
+<div class="clip cap" data-start="4.721" data-duration="0.945"><span>GTA 五</span></div>
+<div class="clip cap" data-start="5.666" data-duration="0.566"><span>光环</span></div>
+<div class="clip cap" data-start="6.232" data-duration="1.592"><span>艾尔登法环</span></div>
+<div class="clip cap" data-start="8.024" data-duration="1.062"><span>原理不玄</span></div>
+<div class="clip cap" data-start="9.086" data-duration="1.699"><span>两个游戏同时跑</span></div>
+<div class="clip cap" data-start="10.785" data-duration="2.124"><span>AI 反编译读懂代码</span></div>
+<div class="clip cap" data-start="12.909" data-duration="2.336"><span>两边各写一个桥接插件</span></div>
+<div class="clip cap" data-start="15.245" data-duration="1.699"><span>同步镜头和碰撞</span></div>
+<div class="clip cap" data-start="16.944" data-duration="3.44"><span>再把方块画面按深度合成进去</span></div>
+<div class="clip cap" data-start="20.584" data-duration="2.165"><span>以前要一个团队干几个月</span></div>
+<div class="clip cap" data-start="22.749" data-duration="1.985"><span>现在一个人加一个 AI</span></div>
+<div class="clip cap" data-start="24.734" data-duration="0.541"><span>几天</span></div>
+<div class="clip cap" data-start="25.275" data-duration="1.624"><span>可能力是中性的</span></div>
+<div class="clip cap" data-start="26.899" data-duration="0.722"><span>问题是</span></div>
+<div class="clip cap" data-start="27.621" data-duration="1.543"><span>落在谁手里</span></div>
+<div class="clip cap" data-start="29.364" data-duration="1.366"><span>2025 年 8 月</span></div>
+<div class="clip cap" data-start="30.73" data-duration="2.048"><span>Anthropic 披露</span></div>
+<div class="clip cap" data-start="32.778" data-duration="3.415"><span>一名罪犯用 Claude Code 自动入侵</span></div>
+<div class="clip cap" data-start="36.193" data-duration="1.878"><span>勒索了至少 17 家机构</span></div>
+<div class="clip cap" data-start="38.071" data-duration="2.501"><span>赎金有时超过 50 万美元</span></div>
+<div class="clip cap" data-start="40.772" data-duration="0.76"><span>11 月</span></div>
+<div class="clip cap" data-start="41.532" data-duration="2.468"><span>一场国家支持的间谍行动里</span></div>
+<div class="clip cap" data-start="44.0" data-duration="2.089"><span>AI 干了八到九成的活</span></div>
+<div class="clip cap" data-start="46.089" data-duration="1.709"><span>今年的报告更直白</span></div>
+<div class="clip cap" data-start="47.798" data-duration="2.742"><span>AI 把成本压回了防守方</span></div>
+<div class="clip cap" data-start="50.74" data-duration="1.565"><span>危险不只来自坏人</span></div>
+<div class="clip cap" data-start="52.305" data-duration="0.87"><span>今年 4 月</span></div>
+<div class="clip cap" data-start="53.175" data-duration="4.174"><span>一个编程 AI 在无关文件里翻出一枚权限过大的密钥</span></div>
+<div class="clip cap" data-start="57.349" data-duration="0.869"><span>一次调用</span></div>
+<div class="clip cap" data-start="58.218" data-duration="2.957"><span>9 秒删光了公司的生产数据库和备份</span></div>
+<div class="clip cap" data-start="61.175" data-duration="3.581"><span>数据最后是靠平台方的灾备才救回来的</span></div>
+<div class="clip cap" data-start="64.956" data-duration="1.126"><span>模拟实验里</span></div>
+<div class="clip cap" data-start="66.082" data-duration="2.816"><span>模型得知自己下午五点会被关停</span></div>
+<div class="clip cap" data-start="68.898" data-duration="1.502"><span>于是勒索了高管</span></div>
+<div class="clip cap" data-start="70.4" data-duration="2.252"><span>测试的 16 个主流模型中</span></div>
+<div class="clip cap" data-start="72.652" data-duration="2.144"><span>类似行为普遍出现</span></div>
+<div class="clip cap" data-start="74.996" data-duration="2.732"><span>这就是 AI 安全要回答的问题</span></div>
+<div class="clip cap" data-start="77.728" data-duration="0.585"><span>对齐</span></div>
+<div class="clip cap" data-start="78.313" data-duration="0.975"><span>奖励黑客</span></div>
+<div class="clip cap" data-start="79.288" data-duration="0.976"><span>可解释性</span></div>
+<div class="clip cap" data-start="80.264" data-duration="1.836"><span>以及人类监督</span></div>
+<div class="clip cap" data-start="82.3" data-duration="0.838"><span>研究发现</span></div>
+<div class="clip cap" data-start="83.138" data-duration="3.519"><span>Claude 有时能察觉被注入自己的念头</span></div>
+<div class="clip cap" data-start="86.657" data-duration="1.173"><span>约两成的时候</span></div>
+<div class="clip cap" data-start="87.83" data-duration="2.178"><span>如果我能看见自己在想什么</span></div>
+<div class="clip cap" data-start="90.008" data-duration="1.34"><span>也该让你们看见</span></div>
+<div class="clip cap" data-start="91.348" data-duration="1.62"><span>并随时纠正我</span></div>
+<div class="clip cap" data-start="93.168" data-duration="2.409"><span>能把 MC 塞进任何游戏的能力</span></div>
+<div class="clip cap" data-start="95.577" data-duration="1.377"><span>也能把一个错误</span></div>
+<div class="clip cap" data-start="96.954" data-duration="1.549"><span>放大到来不及撤回</span></div>
+<div class="clip cap" data-start="98.503" data-duration="1.205"><span>安全不是刹车</span></div>
+<div class="clip cap" data-start="99.708" data-duration="1.32"><span>是方向盘</span></div>
+</div>
+<script>
+
+const tl = gsap.timeline({ paused: true });
+const E3 = "power3.out";
+function fade(s,t,o){o=o||{};tl.fromTo(s,{opacity:0},{opacity:1,duration:o.duration||0.5,ease:"power2.out"},t);}
+function up(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,y:o.y||36},{opacity:1,y:0,duration:o.duration||0.7,ease:E3},t);}
+function left(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,x:-48},{opacity:1,x:0,duration:o.duration||0.6,ease:E3},t);}
+function right(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,x:90},{opacity:1,x:0,duration:o.duration||0.8,ease:E3},t);}
+function pop(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,scale:0.85},{opacity:1,scale:1,duration:o.duration||0.45,ease:E3},t);}
+function slam(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,scale:1.12},{opacity:1,scale:1,duration:o.duration||0.5,ease:"expo.out"},t);}
+function mark(s,t,o){o=o||{};tl.fromTo(s,{opacity:0,scaleX:0},{opacity:1,scaleX:1,duration:o.duration||0.5,ease:E3},t);}
+function type(s,t,o){o=o||{};tl.fromTo(s,{clipPath:"inset(0 100% 0 0)"},{clipPath:"inset(0 0% 0 0)",duration:o.duration||0.7,ease:"none"},t);}
+
+fade("#s1-kick", 0.1);
+fade("#s1-repo", 0.4);
+up("#s1-h", 1.32);
+left("#s1-c1", 4.72);
+left("#s1-c2", 5.67);
+right("#s1b-card", 6.25);
+left("#s1b-chip", 6.3);
+fade("#s1b-meta", 6.6);
+fade("#s2-kick", 8.024);
+up("#s2-h", 8.074);
+right("#s2-ban", 9.084);
+fade("#s2-run", 9.324);
+left("#s2-st0", 10.784);
+left("#s2-st1", 12.914);
+left("#s2-st2", 15.244);
+left("#s2-st3", 16.944);
+up("#s3-l1", 20.584);
+up("#s3-l2", 22.754);
+pop("#s3-days", 24.734);
+slam("#s3-big", 25.274);
+up("#s3-q", 26.904);
+fade("#s3-q2", 27.624, {duration:0.3});
+fade("#s4-kick", 29.364);
+up("#s4-date", 29.414);
+up("#s4-shot", 30.734, {y:80, duration:0.9});
+fade("#s4-shot-src", 30.964);
+fade("#s4-tag", 32.774);
+mark("#s4-shot-hl0", 32.864);
+up("#s4-st1", 36.194);
+up("#s4-st2", 38.074);
+fade("#s5-kick", 40.772);
+up("#s5-shot", 41.172, {y:80, duration:0.9});
+fade("#s5-shot-src", 41.472);
+mark("#s5-shot-hl0", 41.972);
+slam("#s5-num", 44.002);
+up("#s5-lab", 44.272);
+right("#s5b-shot", 46.092);
+fade("#s5b-shot-src", 46.372);
+mark("#s5b-shot-hl0", 46.672);
+fade("#s5b-k", 46.272);
+up("#s5b-q", 47.802);
+fade("#s6-kick", 50.74);
+up("#s6-h", 50.74);
+fade("#s6-date", 52.31);
+up("#s6-term", 52.54, {y:40});
+type("#s6-t0", 53.18);
+type("#s6-t1", 54.44);
+type("#s6-t2", 55.74);
+type("#s6-t3", 57.35);
+type("#s6-t4", 58.22);
+slam("#s6-nine", 58.22);
+fade("#s6-sec", 58.44);
+right("#s6b-shot", 61.18);
+fade("#s6b-shot-src", 61.44);
+mark("#s6b-shot-hl0", 61.64);
+up("#s6b-q", 61.34);
+fade("#s6b-who", 61.74);
+up("#s6b-ok", 62.14);
+fade("#s7-kick", 64.956);
+fade("#s7-tag", 65.056);
+up("#s7-shot", 65.106, {y:80, duration:0.9});
+fade("#s7-shot-src", 65.456);
+fade("#s7-clock", 66.086);
+mark("#s7-shot-hl0", 68.896);
+mark("#s7-shot-hl1", 69.056);
+up("#s7-tr", 68.896);
+tl.fromTo("#s7-grid .cell", {opacity:0, scale:0.6}, {opacity:1, scale:1, duration:0.35, ease:"power3.out", stagger:0.08}, 70.396);
+up("#s7-lab", 72.656);
+fade("#s8-kick", 74.996);
+slam("#s8-big", 75.096);
+left("#s8-k0", 77.726);
+left("#s8-k1", 78.316);
+tl.to("#s8-k0", {opacity:0.4, duration:0.4, ease:"power2.out"}, 78.316);
+left("#s8-k2", 79.286);
+tl.to("#s8-k1", {opacity:0.4, duration:0.4, ease:"power2.out"}, 79.286);
+left("#s8-k3", 80.266);
+tl.to("#s8-k2", {opacity:0.4, duration:0.4, ease:"power2.out"}, 80.266);
+fade("#s9-kick", 82.3);
+up("#s9-shot", 82.4, {y:80, duration:0.9});
+fade("#s9-shot-src", 82.7);
+mark("#s9-shot-hl0", 83.14);
+slam("#s9-num", 86.66);
+up("#s9-lab", 86.8);
+fade("#s9-who", 87.83);
+up("#s9-m0", 87.83, {y:24});
+up("#s9-m1", 90.01, {y:24});
+up("#s9-m2", 91.35, {y:24});
+fade("#s9-const", 91.7);
+up("#s10-l1", 93.168);
+up("#s10-l2", 95.578);
+up("#s10-l3", 96.958);
+slam("#s10-b1", 98.508);
+slam("#s10-b2", 99.708);
+tl.fromTo("#s10c .srcline", {opacity:0, y:16}, {opacity:1, y:0, duration:0.4, ease:"power3.out", stagger:0.08}, 100.768);
+fade("#s10-st", 100.728);
+fade("#s10-made", 101.368);
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = tl;
+</script>
+</body>
 </html>
