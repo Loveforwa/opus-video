@@ -336,6 +336,51 @@ function drawLabel(o) {
   g.restore();
 }
 
+// ───────────────────────────── 2D line layer (3Blue1Brown-style) ─────────────────────────────
+// Flat scenes push draw closures into D2; they run on the text canvas before the type, after a beat "punch".
+let D2 = [];
+function flatBack() { setBack('#0c0d11', '#0a0b0e', '#000000'); fx.flat = true; look(0, 0, 8, 0, 0, 0, 38); }
+function paper(t, t0) {
+  g.save(); g.strokeStyle = P.paper; g.globalAlpha = .045 * clamp((t - t0) / .5); g.lineWidth = 1; g.beginPath();
+  for (let x = 0; x <= W; x += 90) { g.moveTo(x + .5, 0); g.lineTo(x + .5, H); }
+  for (let y = 30; y <= H; y += 90) { g.moveTo(0, y + .5); g.lineTo(W, y + .5); }
+  g.stroke(); g.restore();
+}
+const ePen = (t, b, d = .45) => eOutCubic(clamp((t - b) / d));
+function pen(c, w = 4, a = 1, dash = null) { g.strokeStyle = c; g.lineWidth = w; g.globalAlpha = clamp(a); g.lineCap = 'round'; g.lineJoin = 'round'; g.setLineDash(dash || []); }
+// stroke a polyline up to fraction p of its length; returns the pen tip for arrowheads
+function poly(pts, p = 1) {
+  if (p <= 0 || pts.length < 2) return null;
+  const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const tgt = L[L.length - 1] * clamp(p);
+  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); let end = pts[0], dir = [1, 0];
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; dir = [x1 - x0, y1 - y0];
+    if (L[i] >= tgt) { const f = (tgt - L[i - 1]) / Math.max(1e-6, L[i] - L[i - 1]); end = [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f]; g.lineTo(end[0], end[1]); break; }
+    g.lineTo(x1, y1); end = pts[i];
+  }
+  g.stroke(); return { end, dir };
+}
+function arc(cx, cy, r, p = 1, a0 = -Math.PI / 2) { if (p <= 0) return; g.beginPath(); g.arc(cx, cy, Math.max(.1, r), a0, a0 + TAU * clamp(p)); g.stroke(); }
+function disc(cx, cy, r, c, a) { g.save(); g.globalAlpha = clamp(a); g.fillStyle = c; g.beginPath(); g.arc(cx, cy, Math.max(.1, r), 0, TAU); g.fill(); g.restore(); }
+function bez(a, b, bend, n = 48) {
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+  const cx = mx - dy / l * bend, cy = my + dx / l * bend, pts = [];
+  for (let i = 0; i <= n; i++) { const u = i / n; pts.push([(1 - u) * (1 - u) * a[0] + 2 * (1 - u) * u * cx + u * u * b[0], (1 - u) * (1 - u) * a[1] + 2 * (1 - u) * u * cy + u * u * b[1]]); }
+  return pts;
+}
+function arrow(pts, p, c, w = 4, a = 1) {
+  pen(c, w, a); const r = poly(pts, p); if (!r || p < .05) return;
+  const ang = Math.atan2(r.dir[1], r.dir[0]), sz = 14 + w * 2; g.setLineDash([]);
+  g.beginPath(); g.moveTo(r.end[0] - Math.cos(ang - .45) * sz, r.end[1] - Math.sin(ang - .45) * sz); g.lineTo(r.end[0], r.end[1]);
+  g.lineTo(r.end[0] - Math.cos(ang + .45) * sz, r.end[1] - Math.sin(ang + .45) * sz); g.stroke();
+}
+function write(x, y, str, o = {}) {
+  g.save(); g.globalAlpha = clamp(o.a ?? 1); g.translate(x, y); if (o.rot) g.rotate(o.rot); if (o.s !== undefined) g.scale(Math.max(1e-3, o.s), Math.max(1e-3, o.s));
+  g.font = `${o.weight || 900} ${o.size || 40}px ${FF[o.font || 'serif']}`; g.fillStyle = o.c || P.paper; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(str, 0, 0); g.restore();
+}
+
 // ───────────────────────────── HUD ─────────────────────────────
 const CHAP = [[0, '00', 'INTRO'], [B(16), '01', '囚徒困境'], [B(32), '02', '纳什均衡'], [B(48), '03', '重复博弈'], [B(64), '04', '零和 / 正和'], [B(80), '05', '生活中的博弈'], [B(96), '06', '结论']];
 function drawHUD(t) {
@@ -451,109 +496,52 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   tx(B(12), B(16), '一门关于「{我猜你猜我猜}」的学问', { y: 1260, size: 46, font: 'sans', weight: 500, hl: P.gold });
 }
 
-// ═══ S2 · PRISONER'S DILEMMA ═════════════════════════════════════════════
+// ═══ S2 · PRISONER'S DILEMMA — flat line drawing ═══════════════════════════
 {
   const s = mkScene(B(16), B(32), null);
-  // part a — cages
-  const cageGeo = (sz) => {
-    const h = sz / 2, pts = [], E = (a, b) => pts.push(...a, ...b);
-    const c = [[-h, -h, -h], [h, -h, -h], [h, h, -h], [-h, h, -h], [-h, -h, h], [h, -h, h], [h, h, h], [-h, h, h]];
-    [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([a, b]) => E(c[a], c[b]));
-    for (let k = 1; k < 5; k++) { const x = -h + k * sz / 5; E([x, -h, h], [x, h, h]); E([x, -h, -h], [x, h, -h]); E([h, -h, x], [h, h, x]); E([-h, -h, x], [-h, h, x]); }
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); return geo;
-  };
-  const partA = new THREE.Group(); s.g.add(partA);
-  const cages = [P.clay, P.blue].map((c, i) => {
-    const grp = new THREE.Group();
-    grp.add(new THREE.LineSegments(cageGeo(1.15), new THREE.LineBasicMaterial({ color: col(c, 1) })));
-    const sp = new THREE.Mesh(SPH, phys(c)); sp.scale.setScalar(.34); grp.add(sp);
-    grp.userData.sp = sp; partA.add(grp); return grp;
-  });
-  const wall = new THREE.Mesh(new THREE.BoxGeometry(.03, 2.6, 1.4), new THREE.MeshBasicMaterial({ color: col('#ffffff', 1.1) }));
-  partA.add(wall);
-  // part b — payoff matrix
-  const partB = new THREE.Group(); s.g.add(partB);
-  const YRS = [[[1, 1], [10, 0]], [[0, 10], [5, 5]]]; // [A row][B col] → [A yrs, B yrs]
-  const NAMES = ['沉默', '背叛'];
-  const SP = 1.25, cells = [];
-  const pillarGeo = new THREE.BoxGeometry(.3, 1, .3); pillarGeo.translate(0, .5, 0);
-  for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
-    const cx = (c - .5) * SP, cz = (r - .5) * SP;
-    const tile = new THREE.Mesh(new THREE.BoxGeometry(1.12, .05, 1.12), new THREE.MeshStandardMaterial({ color: 0x121520, metalness: .6, roughness: .35, emissive: 0x000000, transparent: true }));
-    tile.position.set(cx, 0, cz);
-    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(tile.geometry), new THREE.LineBasicMaterial({ color: col('#9aa3b8', 1.2), transparent: true }));
-    edge.position.copy(tile.position);
-    const pa = new THREE.Mesh(pillarGeo, new THREE.MeshStandardMaterial({ color: P.clay, metalness: .3, roughness: .3, emissive: P.clay, emissiveIntensity: .35, transparent: true }));
-    const pb = new THREE.Mesh(pillarGeo, new THREE.MeshStandardMaterial({ color: P.blue, metalness: .3, roughness: .3, emissive: P.blue, emissiveIntensity: .35, transparent: true }));
-    pa.position.set(cx - .2, .03, cz); pb.position.set(cx + .2, .03, cz);
-    partB.add(tile, edge, pa, pb);
-    cells.push({ r, c, cx, cz, tile, edge, pa, pb, yrs: YRS[r][c], beat: 20 + r * 2 + c });
-  }
-  const H_ = y => Math.max(.03, y * .12);
-  const mkArrow = (a, b, lift, hex) => {
-    const curve = new THREE.QuadraticBezierCurve3(a, V((a.x + b.x) / 2, Math.max(a.y, b.y) + lift, (a.z + b.z) / 2), b);
-    const geo = new THREE.TubeGeometry(curve, 64, .028, 8, false);
-    const mat = new THREE.MeshBasicMaterial({ color: col(hex, 1.1) });
-    const mesh = new THREE.Mesh(geo, mat), head = new THREE.Mesh(new THREE.ConeGeometry(.08, .22, 16), mat);
-    partB.add(mesh, head); return { mesh, head, curve, geo };
-  };
-  const setArrow = (ar, p) => {
-    ar.mesh.visible = ar.head.visible = p > .002;
-    ar.geo.setDrawRange(0, Math.max(1, Math.floor(p * 64)) * 48);
-    ar.head.position.copy(ar.curve.getPoint(p)); ar.head.quaternion.setFromUnitVectors(UP, ar.curve.getTangent(Math.min(p, .999)).normalize());
-  };
-  const cell = (r, c) => cells[r * 2 + c];
-  const top = (ce, who) => V(ce.cx + (who ? .2 : -.2), H_(ce.yrs[who]) + .12, ce.cz);
-  // A switches row (silent→betray) for each B column; B switches column for each A row
-  const arrows = [
-    [mkArrow(top(cell(0, 0), 0), top(cell(1, 0), 0), .9, P.clay), 25], [mkArrow(top(cell(0, 1), 0), top(cell(1, 1), 0), .7, P.clay), 26],
-    [mkArrow(top(cell(0, 0), 1), top(cell(0, 1), 1), .9, P.blue), 28], [mkArrow(top(cell(1, 0), 1), top(cell(1, 1), 1), .7, P.blue), 29],
-  ];
+  const MX = 190, MY = 770, CS = 350;
+  const YRS = [[[1, 1], [10, 0]], [[0, 10], [5, 5]]];       // [A row][B col] → [A yrs, B yrs]
+  const yr = y => y === 0 ? '释放' : `${y}年`;
   s.update = (t) => {
-    const showB = t >= B(20);
-    partA.visible = !showB; partB.visible = showB;
-    if (!showB) {
-      setBack('#0c1018', '#030406', '#1b2236', 0, .4, -1);
-      cages.forEach((cg, i) => {
-        const e = eOutBack(clamp((t - B(16 + i)) / .45));
-        cg.position.set((i ? 1 : -1) * .95, lerp(4.5, 0, e), 0);
-        cg.rotation.y = (i ? -1 : 1) * (.35 + t * .25 + bstep(t, 16, 20) * Math.PI / 4);
-        cg.rotation.x = .15;
-        cg.userData.sp.rotation.y = t * 2; cg.userData.sp.scale.setScalar(.34 * (1 + .15 * kick(t)));
-        cg.userData.sp.material.emissiveIntensity = .05 + (t > B(18 + i) ? .25 * hit(t, B(18 + i), 4) : 0);
-      });
-      const we = eOutExpo(clamp((t - B(17) - .25) / .5));
-      wall.scale.set(1, we, 1); wall.visible = we > .01;
-      look(0, .25, 7.2 - .5 * inv(B(16), B(20), t), 0, -.05, 0, 38 - 2.5 * kick(t));
-      return;
-    }
-    // matrix
-    setBack('#0b0f17', '#030305', '#1d1418', 0, .5, -1);
-    const slow = inv(B(30), B(32), t);                       // pre-drop slow-mo
-    const ddFocus = eInOut(slow);
-    cells.forEach(ce => {
-      const e = eOutBack(clamp((t - B(ce.beat)) / .45));
-      ce.pa.scale.y = H_(ce.yrs[0]) * e; ce.pb.scale.y = H_(ce.yrs[1]) * e;
-      const isDD = ce.r === 1 && ce.c === 1;
-      const dim = isDD ? 1 : 1 - .75 * ddFocus;
-      [ce.pa, ce.pb].forEach(m => { m.material.opacity = dim; m.material.emissiveIntensity = .12 + .25 * hit(t, B(ce.beat), 5); });
-      ce.tile.material.opacity = dim; ce.edge.material.opacity = dim;
-      const redGlow = isDD ? clamp((t - B(28)) / .3) * (.6 + .4 * Math.sin(t * 9)) + 1.5 * ddFocus : 0;
-      ce.tile.material.emissive.setRGB(redGlow * .35, redGlow * .04, redGlow * .03);
-      if (e > .3) {
-        const [ya, yb] = ce.yrs, f = y => y === 0 ? '{释放}' : `${y}年`;
-        const tp = V(ce.cx, Math.max(H_(ya), H_(yb)) + .42, ce.cz);
-        label(tp, `${NAMES[ce.r]} × ${NAMES[ce.c]}`, { size: 26, weight: 500, color: '#c9ccd6', alpha: clamp((e - .3) * 3) * dim, dy: -22 });
-        label(tp, `A ${f(ya)} · B ${f(yb)}`, { size: 30, alpha: clamp((e - .3) * 3) * dim, dy: 18 });
+    flatBack();
+    D2.push(() => {
+      paper(t, B(16));
+      if (t < B(20)) {
+        [[330, P.clay, 'A', 16], [750, P.blue, 'B', 17]].forEach(([x, c, n, b]) => {
+          const p = ePen(t, B(b)), r = 118 * (1 + .04 * kick(t));
+          disc(x, 960, r, c, .1 * p); pen(c, 5); arc(x, 960, r, p);
+          write(x, 960, n, { size: 96, c, a: clamp((t - B(b) - .15) / .2) });
+        });
+        pen(P.paper, 3, .6, [16, 14]); poly([[540, 740], [540, 1180]], ePen(t, B(17) + .25, .5));
+        arrow([[462, 920], [526, 920]], ePen(t, B(18), .35), P.clay, 3, .8);
+        arrow([[618, 1000], [554, 1000]], ePen(t, B(19), .35), P.blue, 3, .8);
+        return;
       }
+      const fr = ePen(t, B(20), .5), slow = eInOut(inv(B(30), B(32), t));
+      pen(P.paper, 3, .9);
+      poly([[MX, MY], [MX + 2 * CS, MY], [MX + 2 * CS, MY + 2 * CS], [MX, MY + 2 * CS], [MX, MY]], fr);
+      poly([[MX + CS, MY - 24], [MX + CS, MY + 2 * CS + 24]], fr); poly([[MX - 24, MY + CS], [MX + 2 * CS + 24, MY + CS]], fr);
+      ['沉默', '背叛'].forEach((w, i) => {
+        write(MX + CS * (i + .5), MY - 48, `B ${w}`, { size: 36, c: P.blue, font: 'sans', weight: 700, a: fr });
+        write(MX - 52, MY + CS * (i + .5), `A ${w}`, { size: 36, c: P.clay, font: 'sans', weight: 700, a: fr, rot: -Math.PI / 2 });
+      });
+      // the trap: red hatch + outline on (betray, betray), built slowly in the pre-drop breath
+      const ddx = MX + CS, ddy = MY + CS;
+      g.save(); g.beginPath(); g.rect(ddx + 3, ddy + 3, CS - 6, CS - 6); g.clip();
+      for (let k = 0; k < 16; k++) { pen(P.red, 3, .32); poly([[ddx - 40 + k * 46, ddy + CS + 20], [ddx - 40 + k * 46 + CS + 60, ddy - 40]], clamp(slow * 2.2 - k / 16)); }
+      g.restore();
+      pen(P.red, 6, 1); poly([[ddx, ddy], [ddx + CS, ddy], [ddx + CS, ddy + CS], [ddx, ddy + CS], [ddx, ddy]], ePen(t, B(28) + .25, .6));
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
+        const e = clamp((t - B(20 + r * 2 + c)) / .35), cx = MX + CS * (c + .5), cy = MY + CS * (r + .5);
+        const dim = r === 1 && c === 1 ? 1 : 1 - .7 * slow, [ya, yb] = YRS[r][c];
+        pen(P.paper, 2, .22 * dim); poly([[cx + 70, cy - 120], [cx - 70, cy + 120]], e);
+        write(cx - 72, cy - 58, yr(ya), { size: ya ? 76 : 52, c: P.clay, s: eOutBack(e), a: clamp(e * 4) * dim });
+        write(cx + 72, cy + 66, yr(yb), { size: yb ? 76 : 52, c: P.blue, s: eOutBack(e), a: clamp(e * 4) * dim });
+      }
+      // A's reasoning (switch row), then B's (switch column)
+      [25, 26].forEach((bt, c) => { const x = MX + CS * (c + .5) - 72; arrow(bez([x - 6, MY + CS * .5 - 10], [x - 6, MY + CS * 1.5 - 112], 80), ePen(t, B(bt), .4), P.clay, 4, 1 - .6 * slow); });
+      [28, 29].forEach((bt, r) => { const y = MY + CS * (r + .5) + 66; arrow(bez([MX + CS * .5 + 130, y + 8], [MX + CS * 1.5 + 10, y + 8], 70), ePen(t, B(bt), .4), P.blue, 4, 1 - .6 * slow); });
     });
-    arrows.forEach(([ar, bt]) => setArrow(ar, eOutExpo(clamp((t - B(bt)) / .45)) * (1 - ddFocus * .6)));
-    const az = -.42 + .5 * inv(B(20), B(30), t) + .12 * bstep(t, 20, 30) / 10;
-    const tgt = V(lerp(0, SP / 2, ddFocus), lerp(.2, .3, ddFocus), lerp(-.9, SP / 2, ddFocus));
-    const dist = lerp(9.8, 5.2, ddFocus), el = lerp(.9, .55, ddFocus);
-    look(tgt.x + Math.sin(az) * dist * Math.cos(el), tgt.y + dist * Math.sin(el), tgt.z + Math.cos(az) * dist * Math.cos(el), tgt.x, tgt.y, tgt.z, 36 - 2.5 * kick(t) * (1 - slow));
-    fx.flash += .45 * hit(t, B(20), 7);
-    fx.sat = 1 - .55 * ddFocus; fx.vig = 1 + .6 * ddFocus;
   };
   tx(B(16), B(20) - .03, '两个嫌犯', { y: 430, size: 110 });
   tx(B(17), B(20) - .03, '被{分开审问}', { y: 560, size: 64, font: 'sans', weight: 700, hl: P.paper });
@@ -663,15 +651,9 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   { const r = rng(31), p = tunPts.geometry.attributes.position.array, c = tunPts.geometry.attributes.color.array, sz = tunPts.geometry.attributes.size.array;
     for (let i = 0; i < 700; i++) { const a = r() * TAU, rr_ = 1.7 + r() * 2.5; p[i * 3] = Math.cos(a) * rr_; p[i * 3 + 1] = Math.sin(a) * rr_; p[i * 3 + 2] = -r() * 56; const k = .12 + .25 * r(); c[i * 3] = k; c[i * 3 + 1] = k * .85; c[i * 3 + 2] = k * .6; sz[i] = 1.5 + r() * 2.5; }
     ['position', 'color', 'size'].forEach(n => tunPts.geometry.attributes[n].needsUpdate = true); }
-  // arena
-  const arena = new THREE.Group(); s.g.add(arena);
-  const RA = 2.4, NB = 44, RB = .14;
-  const floor = mkGrid(6, 2, '#d9b25c', '#3a4f8a', 24); floor.material.uniforms.uHot.value = 0; arena.add(floor);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(RA + .02, .025, 8, 160), new THREE.MeshBasicMaterial({ color: col('#ffffff', .8) })); rim.rotation.x = Math.PI / 2; arena.add(rim);
-  const balls = new THREE.InstancedMesh(SPH, glowify(new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: .4, roughness: .2, emissive: 0xffffff, emissiveIntensity: .06 })), NB);
-  balls.frustumCulled = false; arena.add(balls);
+  const RA = 2.4, NB = 44, RB = .14, ACX = 540, ACY = 1000, AS = 330 / 2.4;
   const TYPE = [...Array(NB)].map((_, i) => i % 3);           // 0 TFT gold · 1 always-defect red · 2 random violet
-  const TCOL = [col(P.gold), col(P.red), col('#a36cf0')];
+  const TCOL = [new THREE.Color(P.gold), new THREE.Color(P.red), new THREE.Color('#a36cf0')];
   const CONV = TYPE.map((ty, i) => ty === 0 ? -1 : B(60 + (i % 3)));
   const sim = { t: -1 };
   const resetSim = () => {
@@ -702,7 +684,7 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   const c_ = new THREE.Color();
   s.update = (t) => {
     const inTun = t < B(52);
-    tun.visible = inTun; arena.visible = !inTun;
+    tun.visible = inTun;
     if (inTun) {
       setBack('#060a16', '#020204', '#1c2a4a', 0, 0, -1);
       const warp = eInExpo(inv(B(50), B(52), t));
@@ -714,21 +696,22 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
       fx.zoom += 1.1 * warp; fx.rgb += 1.6 * warp;
       return;
     }
-    setBack('#070b14', '#020203', '#2a2412', 0, .7, -.4);
+    flatBack();
     simTo(t);
-    for (let i = 0; i < NB; i++) {
-      const conv = CONV[i] > 0 ? eOutExpo(clamp((t - CONV[i]) / .25)) : 0;
-      c_.copy(TCOL[TYPE[i]]).lerp(TCOL[0], conv);
-      const flash = .85 + .5 * hit(t, sim.last[i], 12) + .6 * (CONV[i] > 0 ? hit(t, CONV[i], 6) : 0) + .3 * hit(t, B(62), 4);
-      balls.setColorAt(i, c_.multiplyScalar(flash));
-      D.position.set(sim.x[i], RB, sim.z[i]); D.rotation.set(0, 0, 0); D.scale.setScalar(RB * (1 + .15 * kick(t) + .25 * hit(t, B(62), 5))); D.updateMatrix(); balls.setMatrixAt(i, D.matrix);
-    }
-    balls.instanceMatrix.needsUpdate = true; balls.instanceColor.needsUpdate = true;
-    const az = .3 + .12 * (t - B(52)) + (Math.PI / 8) * [56, 60].reduce((a, b) => a + eOutExpo(clamp((t - B(b)) / .4)), 0);
-    const el = lerp(.95, .8, inv(B(52), B(64), t)), dist = 10.4 - .9 * eOutExpo(clamp((t - B(52)) / 1.2)) * 0;
-    look(Math.sin(az) * dist * Math.cos(el), dist * Math.sin(el), Math.cos(az) * dist * Math.cos(el), 0, -.35, 0, 44 - 3 * kick(t));
-    fx.flash += .8 * hit(t, B(52), 5) + .5 * hit(t, B(62), 5);
-    fx.rgb += 1.4 * hit(t, B(52), 4) + [60, 61, 62].reduce((a, b) => a + .8 * hit(t, B(b), 7), 0);
+    D2.push(() => {
+      paper(t, B(52));
+      pen(P.paper, 3, .85); arc(ACX, ACY, RA * AS + 4, ePen(t, B(52), .6));
+      pen(P.paper, 1.5, .18); arc(ACX, ACY, RA * AS * .5, ePen(t, B(52) + .15, .6), Math.PI / 2);
+      const appear = clamp((t - B(52) - .2) / .3);
+      for (let i = 0; i < NB; i++) {
+        const conv = CONV[i] > 0 ? eOutExpo(clamp((t - CONV[i]) / .25)) : 0;
+        c_.copy(TCOL[TYPE[i]]).lerp(TCOL[0], conv); const cs = c_.getStyle();
+        const x = ACX + sim.x[i] * AS, y = ACY + sim.z[i] * AS, r = RB * AS * (1 + .12 * kick(t)) * appear;
+        disc(x, y, r, cs, .85); pen(P.ink, 2, .6); arc(x, y, r, 1);
+        const dh = t - sim.last[i]; if (dh >= 0 && dh < .4) { pen(cs, 2, (1 - dh / .4) * .8); arc(x, y, r + 34 * dh / .4, 1); }
+        const dc = CONV[i] > 0 ? t - CONV[i] : -1; if (dc >= 0 && dc < .5) { pen(P.gold, 3, 1 - dc / .5); arc(x, y, r + 50 * dc / .5, 1); }
+      }
+    });
   };
   const roundTxt = [];
   for (let f = Math.floor(B(48) * 30); f < Math.ceil(B(52) * 30); f++) {
@@ -755,71 +738,38 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   tx(B(62), B(64) - .02, '{合作}，在重复中胜出', { y: 440, size: 88, hl: P.gold, anim: 'slam' });
 }
 
-// ═══ S5 · ZERO-SUM vs POSITIVE-SUM ═══════════════════════════════════════
+// ═══ S5 · ZERO-SUM vs POSITIVE-SUM — flat ════════════════════════════════
 {
   const s = mkScene(B(64), B(80), null);
-  const pie = new THREE.Group(); s.g.add(pie);
-  const wedges = [];
-  for (let k = 0; k < 8; k++) {
-    const a0 = k * TAU / 8 + .015, a1 = (k + 1) * TAU / 8 - .015, R = 1.3;
-    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(R * Math.cos(a0), R * Math.sin(a0)); sh.absarc(0, 0, R, a0, a1, false); sh.lineTo(0, 0);
-    const geo = new THREE.ExtrudeGeometry(sh, { depth: .3, bevelEnabled: true, bevelThickness: .03, bevelSize: .03, bevelSegments: 2, curveSegments: 12 });
-    geo.rotateX(-Math.PI / 2);
-    const m = new THREE.Mesh(geo, phys(P.gold, { metalness: .9, roughness: .3, iridescence: .2, emissiveIntensity: .02 }));
-    pie.add(m); wedges.push({ m, mid: (a0 + a1) / 2 });
-  }
-  // owner per beat: 0=A(left) 1=B(right)
-  const OWN = [[0, 0, 0, 0, 1, 1, 1, 1]];
+  const OWN = [[0, 0, 0, 0, 1, 1, 1, 1]];                     // wedge owner per beat: 0 = A, 1 = B
   [[4, 0], [0, 1], [5, 0], [1, 1]].forEach(([w, o]) => { const n = OWN[OWN.length - 1].slice(); n[w] = o; OWN.push(n); });
-  const crystal = new THREE.Group(); s.g.add(crystal);
-  const gem = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), phys('#e9c77e', { metalness: .7, roughness: .12, iridescence: 1, iridescenceIOR: 1.8, flatShading: true, emissiveIntensity: .02 }));
-  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.35, 1)), new THREE.LineBasicMaterial({ color: col(P.gold, .9) }));
-  crystal.add(gem, wire);
-  const shards = new Burst(260, .1, 41, [P.gold, '#ffffff', P.gold, P.clay]);
-  s.g.add(shards.m);
-  const tmp = V(), c_ = new THREE.Color();
+  const CX = 540, CY = 1010, R0 = 270, sums = [8, 10, 13, 17, 22, 29, 38, 50];
+  const rOf = n => R0 * .55 * Math.sqrt(n / 8);
   s.update = (t) => {
-    setBack('#100c06', '#030202', '#3a2a10', 0, .4, -1);
-    const merge = eOutExpo(clamp((t - B(70)) / .3));
-    const morph = eOutExpo(clamp((t - B(70) - .25) / .35));
-    pie.visible = morph < .99; crystal.visible = morph > .01 && t < B(78); shards.m.visible = t >= B(78);
-    if (pie.visible) {
-      const split = eOutExpo(clamp((t - B(65)) / .35)) * (1 - merge);
-      const bi = clamp(beatIdx(t) - 65, 0, 4);
-      wedges.forEach((w, k) => {
-        let own = OWN[0][k], prev = own;
-        if (t >= B(66)) { own = OWN[bi][k]; prev = OWN[Math.max(0, bi - 1)][k]; }
-        const mv = eOutExpo(clamp((t - B(65 + bi)) / .3)), side = lerp(prev ? 1 : -1, own ? 1 : -1, bi > 0 ? mv : 1);
-        const hop = prev !== own && bi > 0 ? Math.sin(Math.PI * clamp((t - B(65 + bi)) / .3)) * .6 : 0;
-        w.m.position.set(side * .55 * split, hop, 0);
-        c_.set(P.gold).lerp(new THREE.Color(own ? P.blue : P.clay), split * .85);
-        w.m.material.color.copy(c_); w.m.material.emissive.copy(c_); w.m.material.emissiveIntensity = .02 + .35 * (prev !== own ? hit(t, B(65 + bi), 6) : 0);
-      });
-      pie.scale.setScalar(.78 * (1 - morph));
-      pie.rotation.set(.62, -.3 + .25 * Math.sin(t * .8) + (1 - split) * t * .5, 0);
-      pie.position.y = -.1;
-    }
-    if (crystal.visible) {
-      const grow = bstep(t, 71, 78, .3);
-      const sc = (.55 + .03 * grow) * Math.pow(1.13, grow) * morph * (1 + .06 * kick(t));
-      crystal.scale.setScalar(sc);
-      gem.rotation.set(.4 + bstep(t, 71, 78) * TAU / 5 * .5, t * .6 + bstep(t, 71, 78) * TAU / 5, 0);
-      wire.rotation.set(-t * .3, -bstep(t, 71, 78) * TAU / 10, t * .2);
-      gem.material.emissiveIntensity = .02 + .1 * kick(t);
-      crystal.position.y = -.1;
-    }
-    if (shards.m.visible) {
-      const dt = t - B(78); const sc0 = (.55 + .21) * Math.pow(1.13, 7);
-      for (let i = 0; i < 260; i++) { shards.burstPos(i, dt, tmp, 1.6).multiplyScalar(1.3); tmp.y -= .1; shards.put(i, tmp, shards.spin[i] * dt, shards.sc[i] * 1.4 * (1 - clamp((dt - .5) / .6) * .7)); }
-      shards.done();
-    }
-    const dive = eInExpo(inv(B(79), B(80), t));
-    const az = .1 * Math.sin(t * .5) + .15 * bstep(t, 64, 80, .35) / 16;
-    look(Math.sin(az) * (9 - 5 * dive), 2.4 - .8 * dive, Math.cos(az) * (9 - 5 * dive), 0, -.25, 0, 36 - 3 * kick(t) + 12 * dive);
-    shake(.12 * hit(t, B(78), 4) + .04 * kick(t), t);
-    fx.flash += .7 * hit(t, B(70), 6) + 1 * hit(t, B(78), 5);
-    fx.rgb += 1.2 * hit(t, B(70), 5) + 2 * hit(t, B(78), 3);
-    fx.zoom += 1.2 * dive;
+    flatBack();
+    D2.push(() => {
+      paper(t, B(64));
+      const merge = eOutExpo(clamp((t - B(70)) / .3));
+      if (merge < 1) {                                          // zero-sum: a fixed pie changes hands
+        const draw = ePen(t, B(64), .6), split = eOutExpo(clamp((t - B(65)) / .35)) * (1 - merge), bi = clamp(beatIdx(t) - 65, 0, 4);
+        for (let k = 0; k < 8; k++) {
+          let own = OWN[0][k], prev = own, mv = 1;
+          if (t >= B(66)) { own = OWN[bi][k]; prev = OWN[Math.max(0, bi - 1)][k]; mv = eOutExpo(clamp((t - B(65 + bi)) / .3)); }
+          const x = CX + lerp(prev ? 1 : -1, own ? 1 : -1, mv) * 70 * split, y = CY - (prev !== own ? Math.sin(Math.PI * mv) * 70 : 0);
+          const a0 = -Math.PI / 2 + k * TAU / 8, a1 = a0 + TAU / 8, cc = split > .02 ? (own ? P.blue : P.clay) : P.gold, al = 1 - merge;
+          g.save(); g.globalAlpha = .22 * draw * al; g.fillStyle = cc; g.beginPath(); g.moveTo(x, y); g.arc(x, y, R0, a0, a1); g.closePath(); g.fill(); g.restore();
+          pen(cc, 4, draw * al); g.beginPath(); g.moveTo(x, y); g.arc(x, y, R0, a0, a0 + (a1 - a0) * draw); g.closePath(); g.stroke();
+        }
+      }
+      if (t >= B(70)) {                                         // positive-sum: the whole grows, ring by ring
+        const grow = bstep(t, 71, 78, .3), k = Math.min(7, Math.floor(grow)), f = grow - k;
+        const out = 1 - clamp((t - B(78)) / .5), burst = eInExpo(clamp((t - B(78)) / .9));
+        for (let i = 0; i <= k; i++) { pen(P.gold, 2, .3 * out); arc(CX, CY, rOf(sums[i]) * (1 + burst * (1 + i * .3)), 1); }
+        const rr = rOf(lerp(sums[k], sums[Math.min(7, k + 1)], f)) * eOutBack(clamp((t - B(70) - .1) / .4)) * (1 + 2 * burst);
+        disc(CX, CY, rr, P.gold, .12 * out); pen(P.gold, 5, out); arc(CX, CY, rr, 1);
+        disc(CX - rr, CY, 15, P.clay, out); disc(CX + rr, CY, 15, P.blue, out);
+      }
+    });
   };
   tx(B(64), B(70) - .03, '零和游戏', { y: 400, size: 140, anim: 'slam' });
   tx(B(65), B(70) - .03, '你多拿一块，我就少一块', { y: 530, size: 50, font: 'sans', weight: 700 });
@@ -830,7 +780,6 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   tx(B(65), B(70) - .03, '总和永远 = 8', { y: 1530, size: 36, font: 'sans', weight: 700, color: P.mute });
   tx(B(70), B(74) - .03, '正和游戏', { y: 400, size: 140, anim: 'slam', color: P.gold, glow: 30 });
   tx(B(71), B(74) - .03, '一起把蛋糕{做大}', { y: 530, size: 54, font: 'sans', weight: 700, hl: P.gold });
-  const sums = [8, 10, 13, 17, 22, 29, 38, 50];
   for (let k = 0; k < 8; k++) {
     const n = 70 + k;
     tx(B(n), (k < 7 ? B(n + 1) : B(78)) - .001, `总和 = {${sums[k]}}`, { y: 1460, size: 64, font: 'mono', weight: 500, anim: 'type', stagger: 0, out: .001, hl: P.gold });
@@ -932,15 +881,10 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
       grp.rotation.set(.3, t * .9, .2);
     } };
   });
-  // summary: wireframe "game" polyhedron
-  const poly = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.5, 1)), new THREE.LineBasicMaterial({ color: col(P.gold, .9) }));
-  const polyIn = new THREE.Mesh(new THREE.IcosahedronGeometry(.7, 0), phys('#f3d58c', { flatShading: true, iridescence: 1, metalness: .6 }));
-  s.g.add(poly, polyIn);
   const TINT = ['#121018', '#141006', '#081018', '#180808', '#16080a', '#0a1014'];
   s.update = (t) => {
     const k = clamp(Math.floor((beatIdx(t) - 80) / 2), 0, 6);
     cards.forEach((c, i) => c.g.visible = i === k && k < 6);
-    poly.visible = polyIn.visible = k >= 6;
     if (k < 6) {
       const t0 = B(80 + 2 * k);
       setBack(TINT[k], '#020203', TINT[k], 0, .5, -1);
@@ -953,14 +897,14 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
       fx.flash += .3 * hit(t, t0, 12);
       fx.rgb += 1.2 * hit(t, t0, 7);
     } else {
-      setBack('#0e0b06', '#020202', '#2a200c', 0, .3, -1);
-      const sc = 1 + .25 * bstep(t, 92, 96, .3);
-      poly.scale.setScalar(sc); polyIn.scale.setScalar(sc * (1 + .1 * kick(t)));
-      poly.rotation.set(t * .3, t * .5 + bstep(t, 92, 96) * .6, 0); polyIn.rotation.set(-t * .5, -t * .7, 0);
-      const dive = eInExpo(inv(B(95), B(96), t));
-      look(0, .3, 7.5 - 5 * dive, 0, 0, 0, 36 - 3 * kick(t) + 15 * dive);
-      fx.zoom += 1.1 * dive;
-      fx.flash += .4 * hit(t, B(92), 6);
+      flatBack();
+      D2.push(() => {
+        paper(t, B(92));
+        pen(P.gold, 5, 1); poly([[290, 628], [790, 628]], ePen(t, B(94) + .2, .4));
+        pen(P.paper, 2, .5);                                    // six small marks — one per life case — tick in on the beat
+        for (let i = 0; i < 6; i++) { const x = 315 + i * 90, e = ePen(t, B(92) + i * .09, .3); arc(x, 1000, 22, e); }
+        const e2 = ePen(t, B(95), .3); pen(P.gold, 4, 1); for (let i = 0; i < 6; i++) arc(315 + i * 90, 1000, 22, e2);
+      });
     }
   };
   const L = [['谈判', '敢{离席}的人，才有筹码'], ['职场', '信誉，像{复利}一样增长'], ['冷战', '先开口的人，在{破局}'], ['内卷', '全场都站起来，{谁也没看得更清}'], ['价格战', '你降我也降，{两败俱伤}'], ['合作', '把一次交易，变成{长期关系}']];
@@ -979,12 +923,8 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
   const s = mkScene(B(96), DUR + 1, null);
   const A = new THREE.Mesh(SPH, phys(P.clay)), Bm = new THREE.Mesh(SPH, phys(P.blue));
   const trA = mkTrail(70, col(P.gold, .3)), trB = mkTrail(70, col(P.gold, .3));
-  const ra = new THREE.Mesh(new THREE.TorusGeometry(.62, .1, 32, 120), phys(P.clay, { metalness: .85, roughness: .12, emissive: P.gold }));
-  const rb = new THREE.Mesh(new THREE.TorusGeometry(.62, .1, 32, 120), phys(P.blue, { metalness: .85, roughness: .12, emissive: P.gold }));
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.5, .008, 8, 200), addMat(col(P.gold, 1), .5));
   const helix = new THREE.Group(); helix.add(A, Bm, trA, trB);
-  const gy7 = mkGyro(1.75, 4, '#c9a46c', .01);
-  s.g.add(helix, ra, rb, halo, gy7);
+  s.g.add(helix);
   const TF = B(108);
   const pos = (t, sgn) => {
     const th = 1.5 * (t - B(96)) + .7 * bstep(Math.min(t, TF), 96, 108, .4) + (sgn < 0 ? Math.PI : 0);
@@ -992,27 +932,27 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
     return V(rho * Math.cos(th), .38 * Math.sin(th * 1.5 + (sgn < 0 ? 1 : 0)), rho * Math.sin(th));
   };
   s.update = (t) => {
-    setBack('#07070a', '#010101', t < TF ? '#1a140a' : '#3a2a10', 0, .2, -1);
     const pre = t < TF;
-    helix.visible = pre; ra.visible = rb.visible = halo.visible = !pre;
+    helix.visible = pre;
     if (pre) {
+      setBack('#07070a', '#010101', '#1a140a', 0, .2, -1);
       A.position.copy(pos(t, 1)); Bm.position.copy(pos(t, -1));
       A.scale.setScalar(.3 * (1 + .15 * kick(t))); Bm.scale.setScalar(.3 * (1 + .15 * kick(t)));
       A.material.emissiveIntensity = Bm.material.emissiveIntensity = .05 + .15 * kick(t) + .3 * eInExpo(inv(TF - .5, TF, t));
       setTrail(trA, x => pos(x, 1), t, .02, .2); setTrail(trB, x => pos(x, -1), t, .02, .2);
-    } else {
-      const lt = t - TF, j = eOutBack(clamp(lt / .5));
-      ra.scale.setScalar(j); rb.scale.setScalar(j);
-      ra.position.set(-.31, 0, 0); rb.position.set(.31, 0, 0); rb.rotation.set(Math.PI / 2, 0, 0);
-      const grp = [ra, rb]; grp.forEach(m => { m.material.emissiveIntensity = .03 + .25 * hit(t, TF, 3) + .05 * kick(t); });
-      const spin = lt * .9 + bstep(t, 108, 113, .4) * .5;
-      ra.rotation.set(.3, spin, .2); rb.rotation.set(Math.PI / 2 + .3, spin, .2);
-      halo.scale.setScalar(1 + 2.5 * eOutExpo(clamp(lt / 1.2))); halo.material.opacity = .8 * (1 - clamp(lt / 1.4)); halo.rotation.x = 0;
+      look(0, .9, 6.4 - .6 * inv(B(96), DUR, t), 0, .75, 0, 36 - 2.5 * kick(t));
+    } else {                                                    // flat ending: two circles overlap; the overlap is cooperation
+      flatBack();
+      D2.push(() => {
+        paper(t, TF);
+        const CX = 540, CY = 1060, R = 200, j = eOutCubic(clamp((t - TF - .25) / .7)), d = lerp(250, 112, j), p = ePen(t, TF, .5);
+        g.save(); g.beginPath(); g.arc(CX - d, CY, R, 0, TAU); g.clip(); disc(CX + d, CY, R, P.gold, .55 * j); g.restore();
+        pen(P.clay, 5); arc(CX - d, CY, R, p, Math.PI / 2); pen(P.blue, 5); arc(CX + d, CY, R, p, Math.PI / 2);
+        write(CX - d - 95, CY, 'A', { size: 72, c: P.clay, a: p }); write(CX + d + 95, CY, 'B', { size: 72, c: P.blue, a: p });
+        write(CX, CY, '合作', { size: 54, c: P.paper, a: clamp((j - .6) * 3) });
+      });
     }
-    gy7.userData.spin(t - B(96), bstep(t, 96, 113, .35)); gy7.scale.setScalar(eOutExpo(clamp((t - B(96)) / .8)));
-    look(0, .9, 6.4 - .6 * inv(B(96), DUR, t), 0, .75, 0, 36 - 2.5 * kick(t));
     fx.flash += .9 * hit(t, TF, 4);
-    fx.rgb += 1.5 * hit(t, TF, 3);
     fx.fade = eInOut(inv(59.25, 59.95, t));
   };
   tx(B(96), B(100) - .03, '博弈论的核心', { y: 400, size: 60, font: 'sans', weight: 700, color: P.mute });
@@ -1030,8 +970,8 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
 
 // ───────────────────────────── frame ─────────────────────────────
 function renderAt(t) {
-  fx = { flash: 0, rgb: .15 * kick(t), zoom: 0, dir: new THREE.Vector2(), sat: 1, vig: 1, fade: 0, grain: .04 };
-  LBL = [];
+  fx = { flash: 0, rgb: .15 * kick(t), zoom: 0, dir: new THREE.Vector2(), sat: 1, vig: 1, fade: 0, grain: .04, flat: false };
+  LBL = []; D2 = [];
   rimA.position.set(-4, 2, -2); rimB.position.set(4, -1, -2);
   let active = SC[0];
   SC.forEach(s => { s.g.visible = false; if (t >= s.t0) active = s; });
@@ -1041,12 +981,15 @@ function renderAt(t) {
   camera.updateProjectionMatrix();
   back.position.copy(camera.position);
   updDust(t, camera.position);
-  dust.material.uniforms.uAlpha.value = .8 + .6 * low(t);
+  dust.material.uniforms.uAlpha.value = fx.flat ? 0 : .8 + .6 * low(t);
+  if (fx.flat) { fx.rgb *= .2; fx.flash *= .5; }
   bloom.strength = .16 + .06 * kick(t);
 
   composer.render();
 
   g.clearRect(0, 0, W, H);
+  const pk = 1 + .012 * kick(t);
+  D2.forEach(f => { g.save(); g.translate(W / 2, H / 2); g.scale(pk, pk); g.translate(-W / 2, -H / 2); f(); g.restore(); });
   TX.forEach(o => drawText(t, o));
   LBL.forEach(drawLabel);
   drawHUD(t);
