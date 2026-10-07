@@ -92,11 +92,11 @@ class Kit:
         self.scenes.append({"id": sid, "start": s, "trans": trans, "z": zi, "bg": bg})
         return zi
 
-    def video(self, vid, src, f, t0, t1, style, media_start=0, z=None, fade_in=0.6):
+    def video(self, vid, src, f, t0, t1, style, media_start=0, z=None, fade_in=0.6, extra=""):
         zi = z if z is not None else 10 + 2 * len(self.scenes) - 1
         st = round(self.S(f) + t0, 3)
         self.els.append(f'<video id="{vid}" class="clip vid" src="{src}" muted playsinline data-start="{st}" '
-                        f'data-duration="{round(t1-t0,3)}" data-media-start="{media_start}" style="{style};z-index:{zi}"></video>')
+                        f'data-duration="{round(t1-t0,3)}" data-media-start="{media_start}" {extra} style="{style};z-index:{zi}"></video>')
         if fade_in:
             self.js.append(f'tl.fromTo("#{vid}",{{opacity:0}},{{opacity:1,duration:{fade_in},ease:"power2.out"}},{st});')
 
