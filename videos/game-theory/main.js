@@ -756,7 +756,7 @@ function shake(amp, t) { if (amp <= 0) return; camera.position.x += nz(t * 31) *
           let own = OWN[0][k], prev = own, mv = 1;
           if (t >= B(66)) { own = OWN[bi][k]; prev = OWN[Math.max(0, bi - 1)][k]; mv = eOutExpo(clamp((t - B(65 + bi)) / .3)); }
           const x = CX + lerp(prev ? 1 : -1, own ? 1 : -1, mv) * 70 * split, y = CY - (prev !== own ? Math.sin(Math.PI * mv) * 70 : 0);
-          const a0 = -Math.PI / 2 + k * TAU / 8, a1 = a0 + TAU / 8, cc = split > .02 ? (own ? P.blue : P.clay) : P.gold, al = 1 - merge;
+          const a0 = Math.PI / 2 + k * TAU / 8, a1 = a0 + TAU / 8, cc = split > .02 ? (own ? P.blue : P.clay) : P.gold, al = 1 - merge;
           g.save(); g.globalAlpha = .22 * draw * al; g.fillStyle = cc; g.beginPath(); g.moveTo(x, y); g.arc(x, y, R0, a0, a1); g.closePath(); g.fill(); g.restore();
           pen(cc, 4, draw * al); g.beginPath(); g.moveTo(x, y); g.arc(x, y, R0, a0, a0 + (a1 - a0) * draw); g.closePath(); g.stroke();
         }
