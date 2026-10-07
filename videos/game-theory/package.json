@@ -1,16 +1,14 @@
 {
   "name": "game-theory",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preview": "node scripts/serve.mjs",
+    "render": "node scripts/render.mjs",
+    "stills": "node scripts/render.mjs --stills 1.5,3.3,5.8,9.6,12,14.2,17.3,20,24,26.5,30.5,33.2,36,39.5,43,46.5,48,53.5,57,58.5"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "playwright-core": "^1.63.0",
-    "three": "^0.170.0"
-  }
+    "playwright": "^1.63.0",
+    "three": "0.170.0"
+  },
+  "type": "module",
+  "private": true
 }
