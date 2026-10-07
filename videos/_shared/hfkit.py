@@ -89,13 +89,16 @@ class Kit:
         g = '<div class="glow"></div>' if glow else ""
         self.els.append(f'<section id="{sid}" class="clip scene bg-{bg}" style="z-index:{zi}" data-start="{s}" '
                         f'data-duration="{d}"><div class="sc-in" id="{sid}-in">{g}{ch}{inner}</div></section>')
-        self.scenes.append({"id": sid, "start": s, "trans": trans, "z": zi})
+        self.scenes.append({"id": sid, "start": s, "trans": trans, "z": zi, "bg": bg})
         return zi
 
-    def video(self, vid, src, f, t0, t1, style, media_start=0, z=None):
+    def video(self, vid, src, f, t0, t1, style, media_start=0, z=None, fade_in=0.6):
         zi = z if z is not None else 10 + 2 * len(self.scenes) - 1
-        self.els.append(f'<video id="{vid}" class="clip vid" src="{src}" muted playsinline data-start="{round(self.S(f)+t0,3)}" '
+        st = round(self.S(f) + t0, 3)
+        self.els.append(f'<video id="{vid}" class="clip vid" src="{src}" muted playsinline data-start="{st}" '
                         f'data-duration="{round(t1-t0,3)}" data-media-start="{media_start}" style="{style};z-index:{zi}"></video>')
+        if fade_in:
+            self.js.append(f'tl.fromTo("#{vid}",{{opacity:0}},{{opacity:1,duration:{fade_in},ease:"power2.out"}},{st});')
 
     # ── building blocks ───────────────────────────────────────────────────────
     def shot(self, sid, img, left, top, width, key=None, src_label="", crop_x=0, view_w=1440, crop_y=0, view_h=900):
@@ -153,6 +156,8 @@ class Kit:
                 continue
             self.js.append("{ const O=\"#%s-in\", N=\"#%s-in\", T=%s;\n%s }" % (prev["id"], nxt["id"], nxt["start"], code))
             # incoming scene background fades with its content so the outgoing scene shows through
+            if nxt.get("bg") == "none":
+                continue
             self.js.append(f'tl.fromTo("#{nxt["id"]}", {{backgroundColor:"rgba(11,13,18,0)"}}, {{backgroundColor:"rgba(11,13,18,1)", duration:0.5, ease:"power1.inOut"}}, {nxt["start"]+0.15});')
 
     def grain(self):
