@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<title>小克 Clawd 像素冒险</title>
+<script src="assets/vendor/gsap.min.js"></script>
+<style>
+@font-face{font-family:'Fusion Pixel';src:url('assets/fonts/fusion-pixel-sub.woff2') format('woff2');font-display:block}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0F0E1A}
+#root{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0F0E1A;color:#F0EEE6;font-family:'Fusion Pixel',monospace}
+.clip{position:absolute;inset:0;overflow:hidden}
+.scene{background:#0F0E1A}
+.abs{position:absolute}
+svg{display:block;shape-rendering:crispEdges}
+.px{position:absolute;font-family:'Fusion Pixel',monospace;line-height:1;white-space:nowrap;letter-spacing:0;color:#F0EEE6}
+/* hard shadow offset = one font pixel (the font is drawn on a 12px grid) */
+.sh{text-shadow:.08333em .08333em 0 #191726}
+.sh-o{text-shadow:.08333em .08333em 0 #B5573E}
+.c{opacity:0}
+.fr{display:none}.fr.on{display:block}
+.center{left:0;right:0;text-align:center}
+.org{color:#D97757}.cream{color:#F0EEE6}.dim{color:#8C86B0}.ink{color:#191726}.gold{color:#F4C76B}.grn{color:#8BD17C}
+/* pixel-stepped box: 6px border with notched corners */
+.pbox{position:absolute;background:#F0EEE6;box-shadow:0 -6px 0 0 #191726,0 6px 0 0 #191726,-6px 0 0 0 #191726,6px 0 0 0 #191726,0 -12px 0 0 #F0EEE6,0 12px 0 0 #F0EEE6}
+.term{position:absolute;background:#15132A;box-shadow:0 -12px 0 0 #3A355C,0 12px 0 0 #3A355C,-12px 0 0 0 #3A355C,12px 0 0 0 #3A355C,24px 24px 0 0 #07060D}
+#wipe .cell{position:absolute;width:120px;height:120px;background:#0F0E1A}
+#crt{position:absolute;inset:0;z-index:950;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.13) 0px,rgba(0,0,0,.13) 3px,transparent 3px,transparent 6px)}
+#vig{position:absolute;inset:0;z-index:949;pointer-events:none;background:radial-gradient(110% 80% at 50% 50%,transparent 62%,rgba(0,0,0,.45) 100%)}
+.ground{position:absolute;left:0;width:1080px;top:1500px;height:420px;image-rendering:pixelated}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="27" data-width="1080" data-height="1920">
+
+<!-- ═════════ S1 · terminal summon ═════════ -->
+<section id="s1" class="clip scene" style="z-index:10" data-start="0" data-duration="4.7">
+  <div id="s1-stars" class="abs" style="left:0;top:0"></div>
+  <div id="s1-term" class="term" style="left:120px;top:384px;width:840px;height:528px;transform-origin:50% 50%">
+    <div class="abs" style="left:0;top:0;width:840px;height:72px;background:#3A355C"></div>
+    <div class="abs" style="left:24px;top:24px;width:24px;height:24px;background:#E0605A"></div>
+    <div class="abs" style="left:60px;top:24px;width:24px;height:24px;background:#F4C76B"></div>
+    <div class="abs" style="left:96px;top:24px;width:24px;height:24px;background:#8BD17C"></div>
+    <div class="px dim" style="left:0;right:0;top:24px;text-align:center;font-size:24px">~/my-project</div>
+    <div id="s1-l1" class="px" style="left:48px;top:132px;font-size:48px"><span class="org">$ </span><span class="c">c</span><span class="c">l</span><span class="c">a</span><span class="c">u</span><span class="c">d</span><span class="c">e</span><span id="s1-cur" style="display:inline-block;width:24px;height:48px;background:#D97757;vertical-align:top"></span></div>
+    <div id="s1-l2" class="px dim" style="left:48px;top:228px;font-size:36px"><span class="c">*</span><span class="c"> </span><span class="c">正</span><span class="c">在</span><span class="c">召</span><span class="c">唤</span><span class="c">小</span><span class="c">克</span><span class="c">.</span><span class="c">.</span><span class="c">.</span></div>
+    <div id="s1-l3" class="px grn" style="left:48px;top:300px;font-size:36px"><span class="c">*</span><span class="c"> </span><span class="c">连</span><span class="c">接</span><span class="c">成</span><span class="c">功</span><span class="c">！</span></div>
+    <div id="s1-bar" class="abs" style="left:48px;top:384px;width:744px;height:36px;background:#221F3D"></div>
+    <div id="s1-barf" class="abs" style="left:54px;top:390px;width:732px;height:24px;background:#D97757;transform-origin:0 50%"></div>
+  </div>
+  <div id="s1-burst" class="abs" style="left:0;top:0;width:1080px;height:1920px"></div>
+  <div id="s1-clawd" class="abs" style="left:270px;top:1200px;opacity:0"></div>
+  <div id="s1-spark" class="abs" style="left:0;top:0"></div>
+  <div id="s1-cap" class="px center org sh" style="top:1620px;font-size:48px"><span class="c">C</span><span class="c">L</span><span class="c">A</span><span class="c">W</span><span class="c">D</span><span class="c"> </span><span class="c">已</span><span class="c">上</span><span class="c">线</span><span class="c">！</span></div>
+</section>
+
+<!-- ═════════ S2 · hello ═════════ -->
+<section id="s2" class="clip scene" style="z-index:12" data-start="4.6" data-duration="5.3">
+  <div class="abs sky" style="left:0;top:0"></div>
+  <div id="s2-stars" class="abs" style="left:0;top:0"></div>
+  <div id="s2-moon" class="abs" style="left:780px;top:228px"></div>
+  <div id="s2-hills" class="abs" style="left:0;top:0"></div>
+  <div id="s2-ground" class="ground"></div>
+  <div class="px sh" style="left:60px;top:96px;font-size:36px"><span class="org">1P</span> 小克 <span class="dim">LV.1</span></div>
+  <div id="s2-hearts" class="abs" style="left:780px;top:96px"></div>
+  <div id="s2-bub" class="pbox" style="left:120px;top:792px;width:840px;height:216px;transform-origin:30% 100%">
+    <div id="s2-tail" class="abs" style="left:300px;top:216px"></div>
+    <div id="s2-t1" class="px ink" style="left:0;right:0;top:72px;text-align:center;font-size:72px"><span class="c">你</span><span class="c">好</span><span class="c">！</span><span class="c">我</span><span class="c">是</span><span class="c org">小</span><span class="c org">克</span></div>
+    <div id="s2-t2" class="px ink" style="left:0;right:0;top:72px;text-align:center;font-size:72px"><span class="c">一</span><span class="c">起</span><span class="c">写</span><span class="c">代</span><span class="c">码</span><span class="c">吧</span><span class="c">！</span></div>
+  </div>
+  <div id="s2-clawd" class="abs" style="left:270px;top:1200px;transform-origin:50% 100%"></div>
+</section>
+
+<!-- ═════════ S3 · bug forest run ═════════ -->
+<section id="s3" class="clip scene" style="z-index:14" data-start="9.7" data-duration="7.4">
+  <div class="abs sky" style="left:0;top:0"></div>
+  <div id="s3-stars" class="abs" style="left:0;top:0"></div>
+  <div id="s3-clouds" class="abs" style="left:0;top:0"></div>
+  <div id="s3-far" class="abs" style="left:0;top:0"></div>
+  <div id="s3-near" class="abs" style="left:0;top:0"></div>
+  <div id="s3-ground" class="ground"></div>
+  <div class="px sh" style="left:60px;top:96px;font-size:36px">BUG <span id="s3-b0" class="grn">0</span><span id="s3-b1" class="grn" style="display:none">1</span><span id="s3-b2" class="grn" style="display:none">2</span><span class="dim">/2</span></div>
+  <div class="px center sh dim" style="top:96px;font-size:36px">WORLD 1-1</div>
+  <div class="px sh" style="right:60px;top:96px;font-size:36px"><span class="gold">* </span><span id="s3-k0">00</span><span id="s3-k1" style="display:none">03</span><span id="s3-k2" style="display:none">06</span></div>
+  <div id="s3-hint" class="px center sh" style="top:420px;font-size:48px"><span class="c">前</span><span class="c">方</span><span class="c">发</span><span class="c">现</span><span class="c grn"> B</span><span class="c grn">U</span><span class="c grn">G</span><span class="c">！</span></div>
+  <div id="s3-world" class="abs" style="left:0;top:0"></div>
+  <div id="s3-clawd" class="abs" style="left:200px;top:1320px;transform-origin:50% 100%"></div>
+  <div id="s3-ex" class="px gold sh" style="left:338px;top:1176px;font-size:96px;opacity:0">!</div>
+  <div id="s3-done" class="px center sh-o" style="top:600px;font-size:96px;opacity:0">BUG 清零！</div>
+</section>
+
+<!-- ═════════ S4 · build + launch ═════════ -->
+<section id="s4" class="clip scene" style="z-index:16" data-start="16.9" data-duration="6.2">
+  <div id="s4-cam-bg" class="abs" style="left:0;top:0;width:1080px;height:1920px">
+    <div class="abs sky" style="left:0;top:0"></div>
+    <div id="s4-stars" class="abs" style="left:0;top:0"></div>
+  </div>
+  <div id="s4-lines" class="abs" style="left:0;top:0;opacity:0"></div>
+  <div id="s4-cam" class="abs" style="left:0;top:0;width:1080px;height:1920px">
+    <div id="s4-hills" class="abs" style="left:0;top:0"></div>
+    <div id="s4-ground" class="ground"></div>
+    <div id="s4-clawd" class="abs" style="left:90px;top:1320px;transform-origin:50% 50%"></div>
+    <div id="s4-smoke" class="abs" style="left:0;top:0"></div>
+  </div>
+  <div id="s4-rocket" class="abs" style="left:396px;top:1032px;width:288px;height:576px"></div>
+  <div id="s4-t" class="px center sh" style="top:300px;font-size:60px"><span class="c">把</span><span class="c">代</span><span class="c">码</span><span class="c">一</span><span class="c">块</span><span class="c">块</span><span class="c org">搭</span><span class="c org">起</span><span class="c org">来</span></div>
+  <div id="s4-n3" class="px center sh-o" style="top:480px;font-size:240px">3</div>
+  <div id="s4-n2" class="px center sh-o" style="top:480px;font-size:240px">2</div>
+  <div id="s4-n1" class="px center sh-o" style="top:480px;font-size:240px">1</div>
+  <div id="s4-go" class="px center sh-o gold" style="top:480px;font-size:240px">GO!</div>
+</section>
+
+<!-- ═════════ S5 · landing + title ═════════ -->
+<section id="s5" class="clip scene" style="z-index:18" data-start="22.9" data-duration="4.1">
+  <div id="s5-stars" class="abs" style="left:0;top:0"></div>
+  <div id="s5-ring" class="abs" style="left:96px;top:960px"></div>
+  <div id="s5-planet" class="abs" style="left:0;top:1500px"></div>
+  <div id="s5-flag" class="abs" style="left:612px;top:1262px;transform-origin:50% 100%"></div>
+  <div id="s5-rocket" class="abs" style="left:744px;top:1260px"></div>
+  <div id="s5-dust" class="abs" style="left:0;top:0"></div>
+  <div id="s5-clawd" class="abs" style="left:132px;top:1290px;transform-origin:50% 100%;opacity:0"></div>
+  <div id="s5-h" class="px center sh-o" style="top:288px;font-size:240px"><span class="c" id="s5-h0" style="display:inline-block">小</span><span class="c" id="s5-h1" style="display:inline-block">克</span></div>
+  <div id="s5-en" class="px center org sh" style="top:576px;font-size:96px;letter-spacing:24px"><span class="c">C</span><span class="c">L</span><span class="c">A</span><span class="c">W</span><span class="c">D</span></div>
+  <div id="s5-sub" class="px center sh" style="top:744px;font-size:48px"><span class="c">今</span><span class="c">天</span><span class="c">也</span><span class="c">一</span><span class="c">起</span><span class="c">造</span><span class="c">点</span><span class="c">什</span><span class="c">么</span><span class="c">吧</span><span class="c">！</span></div>
+  <div id="s5-start" class="px center gold sh" style="top:1800px;font-size:36px;opacity:0">▶ PRESS START</div>
+</section>
+
+<!-- ═════════ global overlays ═════════ -->
+<section id="wipe" class="clip" style="z-index:900;pointer-events:none" data-start="0" data-duration="27"></section>
+<div id="vig"></div>
+<div id="crt"></div>
+
+<audio id="bgm" src="assets/audio/clawd-chiptune.mp3" data-start="0" data-duration="27" data-volume="1"></audio>
+</div>
+
+<!-- Cue sheet: shared by the timeline below and scripts/make_audio.py (sound effects land on these times). -->
+<script id="cues" type="application/json">
+{
+  "type": [0.70, 0.82, 0.94, 1.06, 1.18, 1.30],
+  "enter": 1.55,
+  "summon": 2.25,
+  "assembled": 3.35,
+  "online": 3.55,
+  "wipes": [4.6, 9.8, 17.0, 23.0],
+  "bubble": [5.4, 6.95],
+  "hop": [5.05, 8.35, 8.75],
+  "blink": [3.95, 7.9, 26.75],
+  "stomps": [12.0, 14.6],
+  "blocks": [17.75, 18.1, 18.45, 18.8, 19.15],
+  "boardJump": 19.55,
+  "count": [20.3, 20.75, 21.2],
+  "launch": 21.6,
+  "land": 23.85,
+  "jumpOut": 24.2,
+  "title": 24.45,
+  "flag": 25.0,
+  "end": 27.0
+}
+</script>
+
+<script>
+(function(){
+const CUE = JSON.parse(document.getElementById('cues').textContent);
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+// deterministic PRNG (no Math.random in compositions)
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ── palette ───────────────────────────────────────────────────────────────
+const P = {
+  o:'#D97757', s:'#B5573E', e:'#191726',               // Clawd
+  g:'#8BD17C', d:'#4E9A4A', w:'#F0EEE6', k:'#191726',  // bug
+  y:'#F4C76B', Y:'#FFE39A', f:'#F4A24B', F:'#D9573F',  // gold / flame
+  c:'#F0EEE6', C:'#C9C4B6', r:'#D97757', R:'#B5573E', b:'#5B6FA8', B:'#8FA6DA', // rocket
+  h:'#E0605A', m:'#F3E7C6', n:'#D8C79E', a:'#2C2848', A:'#3A355C', p:'#8C86B0'
+};
+
+// ── sprites (one char = one pixel, "." = transparent) ─────────────────────
+// Clawd: the 18×5 half-block mascot from the Claude Code banner, rows doubled to square pixels.
+const BODY = '...oooooooooooo...', EYES = '...ooeooooooeoo...', ARMS = '.oooooooooooooooo.', SHADE = '...ssssssssssss...';
+const LEGS_A = '....o.o....o.o....', LEGS_B = '...o.o......o.o...', NONE = '..................';
+const CLAWD = {
+  idle:  [BODY, BODY, EYES, EYES, ARMS, ARMS, BODY, SHADE, LEGS_A, LEGS_A],
+  blink: [BODY, BODY, BODY, '...ooeooooooeoo...'.replace(/e/g,'s'), ARMS, ARMS, BODY, SHADE, LEGS_A, LEGS_A],
+  up:    ['.o.oooooooooooo.o.', '.o.oooooooooooo.o.', '.ooooeooooooeoooo.', '.ooooeooooooeoooo.', BODY, BODY, BODY, SHADE, LEGS_A, LEGS_A],
+  walkA: [BODY, BODY, EYES, EYES, ARMS, ARMS, BODY, SHADE, LEGS_A, LEGS_A],
+  walkB: [BODY, BODY, EYES, EYES, ARMS, ARMS, BODY, SHADE, LEGS_B, LEGS_B],
+  jump:  ['.o.oooooooooooo.o.', '.o.oooooooooooo.o.', '.ooooeooooooeoooo.', '.ooooeooooooeoooo.', BODY, BODY, BODY, SHADE, LEGS_B, NONE],
+};
+const BUG = {
+  a: ['..k......k..','...k....k...','..dddddddd..','.dggggggggd.','.dgwkggwkgd.','ddggggggggdd','.dggggggggd.','..dddddddd..','.k..k..k..k.'],
+  b: ['..k......k..','...k....k...','..dddddddd..','.dggggggggd.','.dgwkggwkgd.','ddggggggggdd','.dggggggggd.','..dddddddd..','k..k....k..k'],
+};
+const TOKEN = ['...y...','.y.y.y.','..yyy..','yyyYyyy','..yyy..','.y.y.y.','...y...'];
+const HEART = ['.hh.hh.','hhhhhhh','hhhhhhh','.hhhhh.','..hhh..','...h...'];
+const TAIL  = ['kkkkkkkk','kwwwwwwk','.kwwwwk.','..kwwk..','...kk...'];
+const CLOUD = ['.....aaaa.......','...aaaaaaaa.....','..aaaaaaaaaaa...','.aaaaaaaaaaaaaa.','aaaaaaaaaaaaaaaa','.AAAAAAAAAAAAAA.'];
+const ROCKET = [
+  '.......rr.......','......rrrr......','.....rrrrrr.....','.....cccccc.....','....cccccccc....','....cccccccc....','...cccccccccC...',
+  '...ccckkkkccC...','...cckbbbBkcC...','...cckbbbbkcC...','...cckbbbbkcC...','...cckBbbbkcC...','...ccckkkkccC...',
+  '...cccccccccC...','...cccccccccC...','...rrrrrrrrrR...','...rrrrrrrrrR...','...cccccccccC...','...cccccccccC...',
+  '..rcccccccccCr..','.rrcccccccccCrr.','.rrcccccccccCrr.','rrrcccccccccCrrr','rrrcccccccccCrrr',
+  'rrr.kkkkkkkk.rrr','rr...kkkkkk...rr'];
+const ROCKET_CHUNKS = [[24,26],[19,24],[13,19],[7,13],[0,7]]; // fall order: nozzle → nose
+const PUFF = ['..cccc..','.cccccc.','cccccccc','cccccccc','cccccccc','.cCCCCc.','..CCCC..'];
+const FACE = ['oooo','eooe','eooe','oooo'];
+const FLAME = {
+  a: ['fyyyyyyf','.fyyyyf.','.ffyyff.','..ffff..','..F..F..','...FF...'],
+  b: ['fyyyyyyf','ffyyyyff','.fyyyyf.','..fyyf..','...ff...','...FF...'],
+};
+const FLAG = ['Cwwwwwwww','Cwwoooowww'.slice(0,9),'Cwoeooeow','Cwwoooowww'.slice(0,9),'Cwwowwoww','Cwwwwwwww'].concat(Array(14).fill('C........'));
+
+function svg(map, s, pal){
+  pal = pal || P; const h = map.length, w = map[0].length; let r = '';
+  for (let y = 0; y < h; y++){
+    const row = map[y]; if (row.length !== w) throw new Error('sprite row ' + y + ' has width ' + row.length + ', expected ' + w);
+    let x = 0;
+    while (x < w){ const ch = row[x]; if (ch === '.'){ x++; continue; } let x2 = x; while (x2 < w && row[x2] === ch) x2++;
+      r += `<rect x="${x*s}" y="${y*s}" width="${(x2-x)*s}" height="${s}" fill="${pal[ch]}"/>`; x = x2; }
+  }
+  return `<svg width="${w*s}" height="${h*s}" viewBox="0 0 ${w*s} ${h*s}">${r}</svg>`;
+}
+function frames(id, set, s, first){
+  $('#'+id).innerHTML = Object.keys(set).map(k => `<div class="fr${k===first?' on':''}" data-f="${k}">${svg(set[k], s)}</div>`).join('');
+}
+
+// ── scenery generators ───────────────────────────────────────────────────
+function skySVG(){
+  const bands = ['#0F0E1A','#141225','#1A1730','#211D3B','#282347'], edges = [480, 780, 1032, 1260, 1500];
+  let r = '', top = 0;
+  bands.forEach((col, i) => { r += `<rect x="0" y="${top}" width="1080" height="${edges[i]-top}" fill="${col}"/>`; top = edges[i]; });
+  for (let i = 0; i < bands.length - 1; i++) for (let x = 0; x < 90; x++){ // checker dither on band seams
+    const y0 = edges[i] - 12; if (x % 2 === 0) r += `<rect x="${x*12}" y="${y0}" width="12" height="12" fill="${bands[i+1]}"/>`;
+    else r += `<rect x="${x*12}" y="${edges[i]}" width="12" height="12" fill="${bands[i]}"/>`;
+  }
+  return `<svg width="1080" height="1500">${r}</svg>`;
+}
+function starsSVG(seed, n, h, groups){
+  const R = rng(seed), out = Array.from({length: groups}, () => '');
+  for (let i = 0; i < n; i++){
+    const x = Math.floor(R()*90)*12, y = Math.floor(R()*(h/12))*12, g = i % groups, big = R() < 0.12, dim = R() < 0.45;
+    const col = dim ? '#8C86B0' : '#F0EEE6';
+    if (big) out[g] += `<rect x="${x}" y="${y-12}" width="12" height="36" fill="${col}"/><rect x="${x-12}" y="${y}" width="36" height="12" fill="${col}"/>`;
+    else out[g] += `<rect x="${x}" y="${y}" width="${dim?6:12}" height="${dim?6:12}" fill="${col}"/>`;
+  }
+  return out.map((r, i) => `<svg class="tw tw${i}" style="position:absolute;left:0;top:0" width="1080" height="${h}">${r}</svg>`).join('');
+}
+function discMap(rad, fill, rim, dark, seed){
+  const R = rng(seed), d = rad*2, rows = [];
+  const craters = Array.from({length: 4}, () => [R()*d*0.7 + d*0.15, R()*d*0.7 + d*0.15, 1 + R()*rad*0.25]);
+  for (let y = 0; y < d; y++){ let row = '';
+    for (let x = 0; x < d; x++){ const dx = x + .5 - rad, dy = y + .5 - rad, q = Math.sqrt(dx*dx + dy*dy);
+      if (q > rad) { row += '.'; continue; }
+      const cr = craters.some(([cx, cy, cr]) => Math.hypot(x + .5 - cx, y + .5 - cy) < cr);
+      row += (q > rad - 1.2 && dx > 0) || (dx + dy > rad*0.9 && (x + y) % 2 === 0) ? rim : cr ? dark : fill; }
+    rows.push(row); }
+  return rows;
+}
+function hillsSVG(w, base, amp, f1, f2, col, seed){
+  const R = rng(seed), p1 = R()*6, p2 = R()*6; let r = '';
+  for (let x = 0; x < w/12; x++){
+    const hh = Math.round((base + amp*(Math.sin(x*f1 + p1) + 0.5*Math.sin(x*f2 + p2)))/12)*12;
+    r += `<rect x="${x*12}" y="${1500-hh}" width="12" height="${hh}" fill="${col}"/>`;
+  }
+  return `<svg style="position:absolute;left:0;top:0" width="${w}" height="1500">${r}</svg>`;
+}
+function groundURI(){
+  const R = rng(7); let r = '<rect width="96" height="420" fill="#2E2128"/><rect width="96" height="12" fill="#7BB063"/><rect y="12" width="96" height="12" fill="#5E8F4E"/><rect y="24" width="96" height="12" fill="#3F2E33"/>';
+  for (let x = 0; x < 8; x += 2) r += `<rect x="${x*12}" y="12" width="12" height="12" fill="#7BB063"/><rect x="${x*12+12}" y="24" width="12" height="12" fill="#5E8F4E"/>`;
+  for (let i = 0; i < 14; i++){ const x = Math.floor(R()*8)*12, y = 48 + Math.floor(R()*30)*12; r += `<rect x="${x}" y="${y}" width="12" height="12" fill="${R()<.5?'#3F2E33':'#251A20'}"/>`; }
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="420" shape-rendering="crispEdges">${r}</svg>`)}")`;
+}
+
+// ── build scenery ────────────────────────────────────────────────────────
+const SKY = skySVG(); $$('.sky').forEach(e => e.innerHTML = SKY);
+const GROUND = groundURI(); $$('.ground').forEach(e => { e.style.backgroundImage = GROUND; e.style.backgroundSize = '96px 420px'; });
+$('#s1-stars').innerHTML = starsSVG(11, 60, 1920, 3);
+$('#s2-stars').innerHTML = starsSVG(21, 70, 1200, 3);
+$('#s3-stars').innerHTML = starsSVG(31, 60, 1100, 3);
+$('#s4-stars').innerHTML = starsSVG(41, 120, 3200, 3);
+$('#s5-stars').innerHTML = starsSVG(51, 150, 1920, 3);
+$('#s2-moon').innerHTML = svg(discMap(9, 'm', 'n', 'n', 3), 12);
+$('#s2-hills').innerHTML = hillsSVG(1080, 220, 70, 0.09, 0.23, '#2A2643', 5) + hillsSVG(1080, 120, 50, 0.14, 0.31, '#352F55', 6);
+$('#s4-hills').innerHTML = hillsSVG(1080, 200, 80, 0.08, 0.21, '#2A2643', 9) + hillsSVG(1080, 110, 40, 0.15, 0.33, '#352F55', 10);
+$('#s3-far').innerHTML = hillsSVG(1500, 240, 80, 0.07, 0.19, '#2A2643', 12);
+$('#s3-near').innerHTML = hillsSVG(2100, 120, 50, 0.13, 0.29, '#352F55', 13) +
+  [['{ }', 260, 640], ['</>', 980, 560], ['fn()', 1480, 700], ['=>', 1900, 600], ['[ ]', 620, 860], ['//', 1300, 900]]
+    .map(([t, x, y]) => `<div class="px" style="left:${x}px;top:${y}px;font-size:72px;color:#4A4470">${t}</div>`).join('');
+$('#s3-clouds').innerHTML = [[60, 300, 12], [560, 420, 12], [900, 240, 12], [1300, 360, 12]].map(([x, y, s]) => `<div class="abs" style="left:${x}px;top:${y}px">${svg(CLOUD, s)}</div>`).join('');
+$('#s2-hearts').innerHTML = [0,1,2].map(i => `<div class="abs" style="left:${i*84}px;top:0">${svg(HEART, 12)}</div>`).join('');
+$('#s2-tail').innerHTML = svg(TAIL, 12);
+
+// planet + ring for the finale
+(function(){
+  const rad = 26, rows = [];
+  for (let y = 0; y < 18; y++){ let row = '';
+    for (let x = 0; x < 45; x++){ const dx = x + .5 - 22.5, dy = y + .5 - rad, q = Math.hypot(dx, dy);
+      if (q > rad) { row += '.'; continue; }
+      const crater = Math.hypot(x - 8, y - 6) < 2.2 || Math.hypot(x - 33, y - 9) < 3 || Math.hypot(x - 20, y - 13) < 1.6;
+      row += q > rad - 1 ? 'r' : crater ? 'R' : ((x + y) % 2 === 0 && y > 12) ? 'R' : 's'; }
+    rows.push(row); }
+  $('#s5-planet').innerHTML = svg(rows, 24, Object.assign({}, P, {s:'#C2634A', r:'#E08A68', R:'#9E4C38'}));
+  $('#s5-ring').innerHTML = svg(discMap(4, 'B', 'b', 'b', 8).map(r => r), 12);
+})();
+
+// actors
+frames('s1-clawd', CLAWD, 30, 'idle');
+frames('s2-clawd', CLAWD, 30, 'idle');
+frames('s3-clawd', CLAWD, 18, 'walkA');
+frames('s4-clawd', CLAWD, 18, 'idle');
+frames('s5-clawd', CLAWD, 24, 'idle');
+$('#s5-flag').innerHTML = svg(FLAG, 12);
+
+// rocket (S4): five chunks that drop in, a face for the window, a flame
+(function(){
+  const s = 18;
+  $('#s4-rocket').innerHTML =
+    ROCKET_CHUNKS.map(([a, b], i) => `<div id="s4-ch${i}" class="abs" style="left:0;top:${a*s}px">${svg(ROCKET.slice(a, b), s)}</div>`).join('') +
+    `<div id="s4-face" class="abs" style="left:${6*s}px;top:${8*s}px;opacity:0">${svg(FACE, s)}</div>` +
+    `<div id="s4-flame" class="abs" style="left:${4*s}px;top:${26*s}px;opacity:0">` +
+      Object.keys(FLAME).map(k => `<div class="fr${k==='a'?' on':''}" data-f="${k}">${svg(FLAME[k], s)}</div>`).join('') + `</div>`;
+  const t = 12;
+  $('#s5-rocket').innerHTML = svg(ROCKET, t) + `<div class="abs" style="left:${6*t}px;top:${8*t}px">${svg(FACE, t)}</div>` +
+    `<div id="s5-flame" class="abs" style="left:${4*t}px;top:${26*t}px">` +
+      Object.keys(FLAME).map(k => `<div class="fr${k==='a'?' on':''}" data-f="${k}">${svg(FLAME[k], t)}</div>`).join('') + `</div>`;
+})();
+
+// pixel-burst: every Clawd pixel as its own square (S1)
+(function(){
+  const R = rng(99), s = 30; let h = '';
+  CLAWD.idle.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '.') return;
+    const sx = 168 + Math.floor(R()*24)*30, sy = 612 + Math.floor(R()*6)*30;
+    h += `<div class="abs bp" style="left:${270 + x*s}px;top:${1200 + y*s}px;width:${s}px;height:${s}px;background:${P[ch]}" data-sx="${sx-270-x*s}" data-sy="${sy-1200-y*s}"></div>`; }));
+  $('#s1-burst').innerHTML = h;
+})();
+
+// sparks container helper: 8 squares radiating from a point
+function sparks(container, cx, cy, col, size, idp){
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1],[.7,.7],[-.7,.7],[.7,-.7],[-.7,-.7]];
+  $(container).insertAdjacentHTML('beforeend', dirs.map((d, i) => `<div class="abs ${idp}" data-dx="${d[0]}" data-dy="${d[1]}" style="left:${cx-size/2}px;top:${cy-size/2}px;width:${size}px;height:${size}px;background:${col}"></div>`).join(''));
+}
+
+// world actors for S3: bugs + tokens
+const GV = 300;  // ground speed px/s (10 px per frame at 30fps keeps every frame on whole pixels)
+const CL_CX = 200 + 9*18;  // Clawd centre x in S3
+(function(){
+  let h = '';
+  CUE.stomps.forEach((ts, i) => {
+    h += `<div id="s3-bug${i}" class="abs" style="left:1100px;top:${1500-9*12}px;transform-origin:50% 100%">` +
+      Object.keys(BUG).map(k => `<div class="fr${k==='a'?' on':''}" data-f="${k}">${svg(BUG[k], 12)}</div>`).join('') + `</div>`;
+    for (let j = 0; j < 3; j++) h += `<div id="s3-tok${i}-${j}" class="abs" style="left:1100px;top:1000px">${svg(TOKEN, 12)}</div>`;
+    h += `<div id="s3-fix${i}" class="px grn sh" style="left:${CL_CX-150}px;top:1300px;width:300px;text-align:center;font-size:48px;opacity:0">+1 修复</div>`;
+  });
+  $('#s3-world').innerHTML = h;
+  CUE.stomps.forEach((ts, i) => sparks('#s3-world', CL_CX, 1450, '#8BD17C', 24, `sp-bug${i}`));
+})();
+sparks('#s1-spark', 540, 1350, '#F4C76B', 30, 'sp-s1');
+$('#s4-smoke').innerHTML = Array.from({length: 10}, (_, i) => `<div class="abs puff" style="left:${540 - 48 + (i - 4.5)*60}px;top:1428px;transform-origin:50% 100%">${svg(PUFF, 12)}</div>`).join('');
+$('#s4-lines').innerHTML = Array.from({length: 14}, (_, i) => { const R = rng(200 + i); return `<div class="abs ln" style="left:${Math.floor(R()*90)*12}px;top:${Math.floor(R()*160)*12}px;width:12px;height:${120 + Math.floor(R()*10)*24}px;background:#8C86B0"></div>`; }).join('');
+$('#s5-dust').innerHTML = Array.from({length: 8}, (_, i) => `<div class="abs dust" style="left:${840 - 24 + (i - 3.5)*48}px;top:1548px;width:48px;height:48px;background:#E08A68"></div>`).join('');
+
+// wipe grid 9×16 of 120px cells
+$('#wipe').innerHTML = Array.from({length: 144}, (_, i) => `<div class="cell" style="left:${(i%9)*120}px;top:${Math.floor(i/9)*120}px"></div>`).join('');
+
+// initial transform state (GSAP owns every transform, none in CSS)
+gsap.set('#wipe .cell, #s2-bub, #s4-n3, #s4-n2, #s4-n1, #s4-go, .puff, .dust, [data-dx]', {scale: 0});
+gsap.set('#s1-barf', {scaleX: 0});
+gsap.set('#s5-flag', {scaleY: 0});
+gsap.set('#s5-rocket', {y: -1700});
+gsap.set('[id^="s4-ch"]', {y: -1500});
+$$('.bp').forEach(e => gsap.set(e, {x: +e.dataset.sx, y: +e.dataset.sy, scale: 0}));
+
+// ═════════ timeline ═════════
+const tl = gsap.timeline({ paused: true });
+const ST = n => `steps(${n})`;
+
+function frame(id, name, t){ $$('#'+id+' > .fr').forEach(e => tl.set(e, {display: e.dataset.f === name ? 'block' : 'none'}, t)); }
+function cycle(id, names, t0, t1, per){ let i = 0; for (let t = t0; t < t1 - 1e-6; t += per, i++) frame(id, names[i % names.length], t); }
+function type(sel, t, per){ $$(sel + ' .c').forEach((e, i) => tl.set(e, {opacity: 1}, t + i*per)); }
+function hop(sel, t, h, d){ tl.to(sel, {y: -h, duration: d/2, ease: 'power2.out'}, t); tl.to(sel, {y: 0, duration: d/2, ease: 'power2.in'}, t + d/2); }
+function squash(sel, t){ tl.to(sel, {scaleX: 1.15, scaleY: 0.85, duration: 0.06, ease: ST(1)}, t); tl.to(sel, {scaleX: 1, scaleY: 1, duration: 0.1, ease: ST(2)}, t + 0.06); }
+function pop(sel, t, d){ tl.fromTo(sel, {scale: 0}, {scale: 1, duration: d || 0.2, ease: ST(4), immediateRender: false}, t); }
+function burst(cls, t, dist){ $$('.' + cls).forEach(e => {
+  tl.fromTo(e, {scale: 1, x: 0, y: 0}, {x: e.dataset.dx*dist, y: e.dataset.dy*dist, duration: 0.4, ease: 'power2.out', immediateRender: false}, t);
+  tl.to(e, {scale: 0, duration: 0.4, ease: ST(3)}, t + 0.15); }); }
+function blink(id, t, back){ frame(id, 'blink', t); frame(id, back || 'idle', t + 0.12); }
+function twinkle(scope, t0, t1){ [0,1,2].forEach(g => { const d = 0.5 + g*0.2, n = Math.floor((t1 - t0)/d);
+  tl.to(scope + ' .tw' + g, {opacity: 0.25, duration: d, ease: ST(2), repeat: n, yoyo: true}, t0 + g*0.15); }); }
+function wipe(t, col){
+  if (col) tl.set('#wipe .cell', {backgroundColor: col}, t - 0.4);
+  tl.to('#wipe .cell', {scale: 1, duration: 0.12, ease: ST(3), stagger: {grid: [16, 9], from: 'start', amount: 0.28}}, t - 0.4);
+  tl.to('#wipe .cell', {scale: 0, duration: 0.12, ease: ST(3), stagger: {grid: [16, 9], from: 'end', amount: 0.28}}, t + 0.05);
+}
+
+// ── S1 · terminal summon (0 – 4.7) ──
+twinkle('#s1', 0, 4.7);
+tl.fromTo('#s1-term', {scaleY: 0, scaleX: 0.2}, {scaleY: 1, scaleX: 1, duration: 0.3, ease: ST(5)}, 0.15);
+tl.to('#s1-cur', {opacity: 0, duration: 0.25, ease: ST(1), repeat: 9, yoyo: true}, 0.3);
+$$('#s1-l1 .c').forEach((e, i) => tl.set(e, {opacity: 1}, CUE.type[i]));
+type('#s1-l2', CUE.enter, 0.05);
+tl.to('#s1-barf', {scaleX: 1, duration: 0.6, ease: ST(12)}, CUE.enter + 0.15);
+type('#s1-l3', CUE.summon - 0.05, 0.04);
+$$('.bp').forEach((e, i) => {
+  tl.to(e, {scale: 1, duration: 0.1, ease: ST(2)}, CUE.summon + i*0.004);
+  tl.to(e, {x: 0, y: 0, duration: 0.7, ease: 'power3.inOut', snap: {x: 6, y: 6}}, CUE.summon + 0.15 + i*0.006);
+});
+tl.set('#s1-clawd', {opacity: 1}, CUE.assembled);
+tl.set('#s1-burst', {opacity: 0}, CUE.assembled);
+burst('sp-s1', CUE.assembled, 330);
+tl.to('#s1-term', {y: -60, opacity: 0.35, duration: 0.3, ease: ST(4)}, CUE.assembled);
+hop('#s1-clawd', CUE.assembled + 0.05, 90, 0.36);
+type('#s1-cap', CUE.online, 0.06);
+blink('s1-clawd', CUE.blink[0]);
+frame('s1-clawd', 'up', 4.15);
+
+// ── S2 · hello (4.6 – 9.9) ──
+twinkle('#s2', 4.6, 9.9);
+hop('#s2-clawd', CUE.hop[0], 72, 0.3); squash('#s2-clawd', CUE.hop[0] + 0.3);
+pop('#s2-bub', CUE.bubble[0], 0.24);
+type('#s2-t1', CUE.bubble[0] + 0.2, 0.09);
+cycle('s2-clawd', ['up', 'idle'], 5.5, 7.1, 0.2);
+tl.set('#s2-t1', {opacity: 0}, CUE.bubble[1]);
+type('#s2-t2', CUE.bubble[1], 0.09);
+blink('s2-clawd', CUE.blink[1]);
+frame('s2-clawd', 'up', CUE.hop[1]);
+hop('#s2-clawd', CUE.hop[1], 120, 0.36); squash('#s2-clawd', CUE.hop[1] + 0.36);
+hop('#s2-clawd', CUE.hop[2], 120, 0.36); squash('#s2-clawd', CUE.hop[2] + 0.36);
+frame('s2-clawd', 'idle', CUE.hop[2] + 0.4);
+
+// ── S3 · run + stomp (9.7 – 17.1) ──
+const RUN0 = 9.8, RUN1 = 15.6, RUN = RUN1 - RUN0;
+twinkle('#s3', 9.7, 17.1);
+tl.fromTo('#s3-ground', {backgroundPosition: '0px 0px'}, {backgroundPosition: `${-GV*RUN}px 0px`, duration: RUN, ease: 'none'}, RUN0);
+tl.fromTo('#s3-near', {x: 0}, {x: -150*RUN, duration: RUN, ease: 'none'}, RUN0);
+tl.fromTo('#s3-far', {x: 0}, {x: -60*RUN, duration: RUN, ease: 'none'}, RUN0);
+tl.fromTo('#s3-clouds', {x: 0}, {x: -30*RUN, duration: RUN, ease: 'none'}, RUN0);
+type('#s3-hint', 10.3, 0.06);
+tl.to('#s3-hint', {opacity: 0, duration: 0.3, ease: ST(3)}, 11.5);
+let walkFrom = RUN0;
+CUE.stomps.forEach((ts, i) => {
+  const tj = ts - 0.42, bugLeftAt = t => CL_CX - 72 + 360*(ts - t);
+  // bug strolls in from the right (ground speed + its own 60 px/s)
+  tl.fromTo('#s3-bug' + i, {x: bugLeftAt(ts - 2.4) - 1100}, {x: bugLeftAt(ts) - 1100, duration: 2.4, ease: 'none'}, ts - 2.4);
+  cycle('s3-bug' + i, ['a', 'b'], ts - 2.4, ts, 0.16);
+  // tokens line the jump arc, collected near the peak
+  for (let j = 0; j < 3; j++){
+    const tc = tj + 0.12 + j*0.1, el = `#s3-tok${i}-${j}`, cx = CL_CX - 42;
+    tl.fromTo(el, {x: cx + GV*2.6 - 1100, y: j === 1 ? -36 : 0}, {x: cx - 1100, duration: 2.6, ease: 'none'}, tc - 2.6);
+    tl.set(el, {opacity: 0}, tc);
+  }
+  tl.set('#s3-k' + i, {display: 'none'}, tj + 0.32); tl.set('#s3-k' + (i + 1), {display: 'inline'}, tj + 0.32);
+  // "!" warning
+  tl.set('#s3-ex', {opacity: 1}, ts - 1.3); tl.set('#s3-ex', {opacity: 0}, ts - 0.95);
+  hop('#s3-ex', ts - 1.3, 24, 0.2);
+  // walk until jump, then jump on the bug, bounce off, keep walking
+  cycle('s3-clawd', ['walkA', 'walkB'], walkFrom, tj, 0.14);
+  frame('s3-clawd', 'jump', tj);
+  tl.to('#s3-clawd', {y: -330, duration: 0.3, ease: 'power2.out'}, tj);
+  tl.to('#s3-clawd', {y: -108, duration: 0.12, ease: 'power2.in'}, tj + 0.3);
+  tl.to('#s3-bug' + i, {scaleY: 0.2, scaleX: 1.3, duration: 0.08, ease: ST(2)}, ts);
+  tl.set('#s3-bug' + i, {opacity: 0}, ts + 0.14);
+  burst('sp-bug' + i, ts + 0.1, 150);
+  tl.to('#s3-clawd', {y: -240, duration: 0.18, ease: 'power2.out'}, ts);
+  tl.to('#s3-clawd', {y: 0, duration: 0.24, ease: 'power2.in'}, ts + 0.18);
+  squash('#s3-clawd', ts + 0.42);
+  tl.set('#s3-fix' + i, {opacity: 1}, ts + 0.05);
+  tl.to('#s3-fix' + i, {y: -180, duration: 0.8, ease: ST(8)}, ts + 0.05);
+  tl.set('#s3-fix' + i, {opacity: 0}, ts + 0.9);
+  tl.set('#s3-b' + i, {display: 'none'}, ts + 0.05); tl.set('#s3-b' + (i + 1), {display: 'inline'}, ts + 0.05);
+  walkFrom = ts + 0.42;
+});
+cycle('s3-clawd', ['walkA', 'walkB'], walkFrom, RUN1, 0.14);
+frame('s3-clawd', 'idle', RUN1);
+tl.set('#s3-done', {opacity: 1}, RUN1 + 0.05);
+pop('#s3-done', RUN1 + 0.05, 0.24);
+tl.to('#s3-done', {opacity: 0.4, duration: 0.15, ease: ST(1), repeat: 3, yoyo: true}, RUN1 + 0.5);
+cycle('s3-clawd', ['up', 'idle'], RUN1 + 0.1, 16.7, 0.18);
+hop('#s3-clawd', RUN1 + 0.1, 90, 0.34); hop('#s3-clawd', RUN1 + 0.5, 90, 0.34);
+
+// ── S4 · build + launch (16.9 – 23.1) ──
+twinkle('#s4', 16.9, 23.1);
+type('#s4-t', 17.15, 0.06);
+CUE.blocks.forEach((t, i) => {
+  tl.to('#s4-ch' + i, {y: 0, duration: 0.3, ease: 'power2.in', snap: {y: 18}}, t - 0.3);
+  tl.to('#s4-rocket', {y: 6, duration: 0.05, ease: ST(1), yoyo: true, repeat: 1}, t);
+  if (i === 0) tl.to('#s4-clawd', {y: -36, duration: 0.1, ease: ST(2), yoyo: true, repeat: 1}, t);
+});
+tl.to('#s4-t', {opacity: 0, duration: 0.2, ease: ST(2)}, 19.3);
+// Clawd hops into the cockpit
+const TB = CUE.boardJump;
+frame('s4-clawd', 'jump', TB);
+tl.to('#s4-clawd', {x: 531 - 90 - 162, duration: 0.55, ease: 'none'}, TB);
+tl.to('#s4-clawd', {y: -420, duration: 0.3, ease: 'power2.out'}, TB);
+tl.to('#s4-clawd', {y: 1203 - 1410, duration: 0.25, ease: 'power2.in'}, TB + 0.3);
+tl.to('#s4-clawd', {scale: 0.2, duration: 0.2, ease: ST(3)}, TB + 0.35);
+tl.set('#s4-clawd', {opacity: 0}, TB + 0.55);
+tl.set('#s4-face', {opacity: 1}, TB + 0.55);
+pop('#s4-face', TB + 0.55, 0.15);
+['#s4-n3', '#s4-n2', '#s4-n1'].forEach((n, i) => { pop(n, CUE.count[i], 0.16); tl.set(n, {opacity: 0}, CUE.count[i] + 0.42); });
+pop('#s4-go', CUE.launch, 0.16);
+tl.to('#s4-go', {opacity: 0, duration: 0.2, ease: ST(2)}, CUE.launch + 0.7);
+// ignition
+const L = CUE.launch;
+tl.set('#s4-flame', {opacity: 1}, L);
+cycle('s4-flame', ['a', 'b'], L, 23.1, 0.08);
+tl.to('#s4-rocket', {x: 6, duration: 0.05, ease: ST(1), repeat: 7, yoyo: true}, L);
+$$('#s4-smoke .puff').forEach((e, i) => {
+  const off = (i - 4.5);
+  tl.fromTo(e, {scale: 0, x: 0, y: 0}, {scale: 1.4 - Math.abs(off)*0.08, x: off*36, y: -24 - Math.abs(off)*6, duration: 0.5, ease: ST(5), immediateRender: false}, L + 0.1 + Math.abs(off)*0.03);
+  tl.to(e, {scale: 0, duration: 0.4, ease: ST(4)}, L + 0.9);
+});
+tl.to('#s4-rocket', {y: -1900, duration: 1.3, ease: 'power2.in', snap: {y: 6}}, L + 0.35);
+tl.to('#s4-cam', {y: 1400, duration: 1.3, ease: 'power2.in', snap: {y: 6}}, L + 0.5);
+tl.to('#s4-cam-bg', {y: 500, duration: 1.3, ease: 'power2.in', snap: {y: 6}}, L + 0.5);
+tl.to('#s4-lines', {opacity: 1, duration: 0.3, ease: ST(3)}, L + 0.6);
+tl.fromTo('#s4-lines .ln', {y: -400}, {y: 1600, duration: 0.5, ease: 'none', repeat: 2, immediateRender: false}, L + 0.6);
+
+// ── S5 · landing + title (22.9 – 27) ──
+twinkle('#s5', 22.9, 27);
+cycle('s5-flame', ['a', 'b'], 22.9, CUE.land, 0.08);
+tl.fromTo('#s5-rocket', {y: -1700}, {y: 0, duration: 0.75, ease: 'power3.out', snap: {y: 6}, immediateRender: false}, CUE.land - 0.75);
+tl.set('#s5-flame', {opacity: 0}, CUE.land);
+$$('#s5-dust .dust').forEach((e, i) => { const off = i - 3.5;
+  tl.fromTo(e, {scale: 0, x: 0, y: 0}, {scale: 1, x: off*30, y: -24, duration: 0.35, ease: ST(4), immediateRender: false}, CUE.land);
+  tl.to(e, {scale: 0, duration: 0.3, ease: ST(3)}, CUE.land + 0.35); });
+// Clawd leaps out of the cockpit to the left
+const TJ = CUE.jumpOut;
+tl.set('#s5-clawd', {opacity: 1}, TJ);
+frame('s5-clawd', 'jump', TJ);
+tl.fromTo('#s5-clawd', {x: 840 - 132 - 216, y: 1374 - (1290 + 120), scale: 0.2}, {scale: 1, duration: 0.25, ease: ST(4), immediateRender: false}, TJ);
+tl.to('#s5-clawd', {x: 0, duration: 0.6, ease: 'none'}, TJ);
+tl.to('#s5-clawd', {y: -400, duration: 0.3, ease: 'power2.out'}, TJ);
+tl.to('#s5-clawd', {y: 0, duration: 0.3, ease: 'power2.in'}, TJ + 0.3);
+frame('s5-clawd', 'idle', TJ + 0.6);
+squash('#s5-clawd', TJ + 0.6);
+// title
+['#s5-h0', '#s5-h1'].forEach((h, i) => { tl.set(h, {opacity: 1}, CUE.title + i*0.18); pop(h, CUE.title + i*0.18, 0.2); });
+type('#s5-en', CUE.title + 0.5, 0.08);
+tl.to('#s5-flag', {scaleY: 1, duration: 0.3, ease: ST(6)}, CUE.flag);
+type('#s5-sub', CUE.flag + 0.25, 0.06);
+cycle('s5-clawd', ['up', 'idle'], 25.75, 26.6, 0.2);
+blink('s5-clawd', CUE.blink[2]);
+tl.set('#s5-start', {opacity: 1}, 26.0);
+tl.to('#s5-start', {opacity: 0, duration: 0.25, ease: ST(1), repeat: 3, yoyo: true}, 26.2);
+
+// transitions
+wipe(CUE.wipes[0]); wipe(CUE.wipes[1]); wipe(CUE.wipes[2]); wipe(CUE.wipes[3], '#F0EEE6');
+
+tl.set({}, {}, CUE.end);
+window.__timelines = window.__timelines || {};
+window.__timelines['main'] = tl;
+})();
+</script>
+</body>
+</html>
