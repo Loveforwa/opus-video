@@ -69,40 +69,73 @@ LEAD = [[72, None, 76, 79, 84, None, 79, 76], [74, None, 79, 83, 86, None, 83, 7
 LEAD_B = [[79, 79, 76, 72, 76, None, 79, None], [83, 83, 79, 74, 79, None, 83, None],
           [84, 83, 81, 76, 81, None, 84, None], [81, 79, 77, 76, 74, None, 72, None]]
 stop = CUE["launch"]
+
+
+def snare(t, vol=0.13): noise(t, 0.12, vol, decay=28, lp=3); tone(t, 0.04, 55, "tri", vol * 0.8)
+def hat(t, vol=0.05): noise(t, 0.04, vol, decay=110)
+def arp(t, d, notes, vol=0.035):
+    """NES-style 16th-note chord arpeggio on a thin 12.5% pulse."""
+    for i in range(int(round(d / (E8 / 2)))): tone(t + i * E8 / 2, E8 / 2 * 0.8, notes[i % len(notes)] + 12, "sq", vol, duty=0.125, r=0.015)
+
+
+# intro (scene 1): arpeggio bed + bass, snare roll while the pixels assemble, crash on "assembled"
+for b, (root, ch) in enumerate([CHORDS[0], CHORDS[2]]):
+    t = b * BAR
+    arp(t + 0.3 if b == 0 else t, BAR - (0.3 if b == 0 else 0), ch + [ch[1]], 0.03)
+    for k in range(4): tone(t + k * 0.5, 0.45, root, "tri", 0.2, r=0.05)
+for i in range(int((CUE["assembled"] - CUE["summon"]) / 0.0625)):
+    snare(CUE["summon"] + i * 0.0625, 0.03 + 0.07 * i / 18)
+noise(CUE["assembled"], 0.9, 0.16, decay=4, lp=2); kick(CUE["assembled"], 0.4)
+for i, m in enumerate([72, 76, 79, 84, 79, 84, 88]):  # pickup jingle into the main theme
+    tone(CUE["online"] + 0.1 + i * 0.125, 0.11, m, "sq", 0.075, duty=0.25)
+tone(CUE["assembled"], 1.2, 36, "tri", 0.24, r=0.3)
+
+# main theme (scenes 2-4)
 for b in range(int((stop - T0) / BAR) + 1):
     t = T0 + b * BAR
-    root, _ = CHORDS[b % 4]
-    full = CUE["wipes"][1] - 0.1 <= t < CUE["wipes"][2] - 0.1         # scene 3 runs with drums
-    build = t >= CUE["wipes"][2] - 0.1
+    root, ch = CHORDS[b % 4]
+    full = CUE["wipes"][1] - 0.1 <= t < CUE["wipes"][2] - 0.1         # scene 3: full drum kit
+    build = t >= CUE["wipes"][2] - 0.1                                 # scene 4: half-time build
     mel = (LEAD_B if b % 8 >= 4 else LEAD)[b % 4]
+    arp(t, min(BAR, stop - t), ch, 0.03 if not full else 0.035)
     for k in range(8):
         tk = t + k * E8
         if tk >= stop: break
-        # bass: driving eighths (root / octave)
-        tone(tk, E8 * 0.9, root + (12 if k % 2 else 0), "tri", 0.22, r=0.02)
-        # hats on the off-beat, kick + snare in the action scene
-        if k % 2 == 1: noise(tk, 0.05, 0.05 if not full else 0.07, decay=90)
-        if full and k in (0, 4): kick(tk)
-        if full and k in (2, 6): noise(tk, 0.12, 0.12, decay=28, lp=3)
-        if build and k in (0, 4): kick(tk, 0.25)
-        # lead
+        tone(tk, E8 * 0.9, root + (12 if k % 2 else 0), "tri", 0.24, r=0.02)
+        hat(tk + E8 / 2, 0.035)
+        if k % 2 == 1: hat(tk, 0.06 if full else 0.045)
+        if full:
+            if k in (0, 4, 7): kick(tk)
+            if k in (2, 6): snare(tk)
+        elif build:
+            if k in (0, 4): kick(tk, 0.28)
+        else:
+            if k == 0: kick(tk, 0.25)
+            if k == 4: snare(tk, 0.09)
         m = mel[k]
-        if m is None: continue
-        if build and k % 2: continue
-        tone(tk, E8 * 0.85, m, "sq", 0.075 if not full else 0.085, duty=0.25, r=0.05)
+        if m is None or (build and k % 2): continue
+        tone(tk, E8 * 0.85, m, "sq", 0.085 if not full else 0.095, duty=0.25, r=0.05)
+        if full: tone(tk, E8 * 0.85, m - 12, "sq", 0.03, duty=0.5, r=0.05)  # octave double for punch
+# countdown snare roll into ignition
+c0 = CUE["count"][0]
+for i in range(int((CUE["launch"] - c0) / 0.0625)): snare(c0 + i * 0.0625, 0.03 + 0.09 * i / 21)
 
 # finale: fanfare on the title, then F – G – C cadence held to the end
 fan = CUE["title"]
-for i, m in enumerate([67, 72, 76, 79]): tone(fan + i * 0.1, 0.12, m, "sq", 0.09, duty=0.25)
-tone(fan + 0.4, 0.55, 84, "sq", 0.09, duty=0.25, r=0.2)
-tone(fan + 0.4, 0.55, 48, "tri", 0.22, r=0.2)
+for k in range(int((fan - 23.0) / E8)):  # driving bass + hats as the rocket lands
+    tone(23.0 + k * E8, E8 * 0.9, 43 + (12 if k % 2 else 0), "tri", 0.2, r=0.02); hat(23.0 + k * E8 + E8 / 2, 0.04)
+for i, m in enumerate([67, 72, 76, 79]): tone(fan + i * 0.1, 0.12, m, "sq", 0.1, duty=0.25)
+tone(fan + 0.4, 0.55, 84, "sq", 0.1, duty=0.25, r=0.2)
+tone(fan + 0.4, 0.55, 48, "tri", 0.24, r=0.2)
+kick(fan + 0.4, 0.4); noise(fan + 0.4, 0.8, 0.12, decay=5, lp=2)
+arp(fan, 25.2 - fan, [60, 64, 67], 0.03)
 for t, root, ch, lead in [(25.2, 41, [65, 69, 72], 81), (25.7, 43, [67, 71, 74], 83), (26.2, 48, [64, 67, 72], 84)]:
     d = 0.5 if t < 26 else CUE["end"] - t
-    tone(t, d, root, "tri", 0.24, r=0.3 if t >= 26 else 0.05)
-    for j, m in enumerate(ch): tone(t + j * 0.04, d, m, "sq", 0.035, duty=0.5, r=0.3 if t >= 26 else 0.05)
-    tone(t, d, lead, "sq", 0.08, duty=0.25, r=0.4 if t >= 26 else 0.05)
-for k in range(int((CUE["end"] - 23.0) / E8)):  # soft pulse under the finale
-    tone(23.0 + k * E8, E8 * 0.9, 48 if 23.0 + k * E8 < 25.2 else 36, "tri", 0.12, r=0.02)
+    tone(t, d, root, "tri", 0.26, r=0.3 if t >= 26 else 0.05)
+    for j, m in enumerate(ch): tone(t + j * 0.04, d, m, "sq", 0.04, duty=0.5, r=0.3 if t >= 26 else 0.05)
+    tone(t, d, lead, "sq", 0.09, duty=0.25, r=0.4 if t >= 26 else 0.05)
+    kick(t, 0.35); snare(t + 0.25, 0.1)
+noise(26.2, 0.8, 0.14, decay=4, lp=2)
 
 # ── sound effects ───────────────────────────────────────────────────────────────────
 for t in CUE["type"]: noise(t, 0.03, 0.18, decay=160); tone(t, 0.02, 96, "sq", 0.03)
@@ -143,6 +176,7 @@ wav = os.path.join(ROOT, "assets", "audio", "clawd-chiptune.wav")
 with wave.open(wav, "wb") as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((out * 32767).astype(np.int16).tobytes())
 mp3 = wav[:-4] + ".mp3"
-subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-ac", "2", "-b:a", "192k", mp3], check=True)
+# loudness-normalise to streaming level (-14 LUFS, -1 dBTP) so it plays loud on phones
+subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-af", "loudnorm=I=-14:TP=-1:LRA=9", "-ar", "44100", "-ac", "2", "-b:a", "192k", mp3], check=True)
 os.remove(wav)
 print(f"{CUE['end']}s -> {mp3}")
